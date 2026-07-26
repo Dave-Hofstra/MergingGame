@@ -1,0 +1,22 @@
+{
+  "name": "MergingGame",
+  "short_name": "MergingGame",
+  "description": "3D physics merge game - launch objects and merge them up to level 10!",
+  "start_url": "/MergingGame/",
+  "display": "standalone",
+  "background_color": "#1a0a2e",
+  "theme_color": "#f0c040",
+  "icons": [
+    {
+      "src": "/MergingGame/merginggame-icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/MergingGame/merginggame-icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,1936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="MergingGame">
+<meta name="application-name" content="MergingGame">
+<link rel="icon" type="image/png" sizes="32x32" href="/MergingGame/merginggame-icon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/MergingGame/merginggame-icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/MergingGame/merginggame-icon-512.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/MergingGame/merginggame-apple-touch-icon.png">
+<link rel="manifest" href="/MergingGame/manifest.json">
+<title>MergingGame</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#1a0a2e;font-family:'Segoe UI',Arial,sans-serif;-webkit-user-select:none;user-select:none;overscroll-behavior:none}
+#game-container{width:100%;height:100%;position:fixed;inset:0;z-index:0;touch-action:none}
+#game-container canvas{display:block;width:100%!important;height:100%!important}
+/* HUD */
+#hud{position:fixed;inset:0;z-index:10;pointer-events:none;font-family:'Segoe UI',Arial,sans-serif}
+#hud>*{pointer-events:auto}
+/* Score */
+#score{position:absolute;top:12px;left:50%;transform:translateX(-50%);color:#fff;font-size:clamp(22px,4vw,38px);font-weight:700;text-shadow:0 2px 12px rgba(0,0,0,.7),0 0 30px rgba(255,200,50,.2);letter-spacing:1px;background:rgba(0,0,0,.5);padding:4px 18px;border-radius:10px;border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(4px)}
+#score span{color:#f0c040}
+/* Goal Card */
+#goal-box{position:absolute;top:12px;left:12px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:6px 12px;backdrop-filter:blur(4px);text-align:center;max-width:160px}
+#goal-box .g-label{color:rgba(255,255,255,.4);font-size:clamp(8px,1.2vw,10px);text-transform:uppercase;letter-spacing:1px}
+#goal-box .g-text{color:#f0c040;font-size:clamp(11px,1.8vw,15px);font-weight:600;margin-top:1px}
+#goal-box .g-progress{height:3px;border-radius:2px;background:rgba(255,255,255,.1);margin-top:5px;overflow:hidden}
+#goal-box .g-fill{height:100%;background:linear-gradient(90deg,#f0c040,#ff69b4);border-radius:2px;transition:width .5s}
+#goal-box.completed{border-color:#4caf50}
+#goal-box.completed .g-text{color:#4caf50}
+/* Next Queue */
+#next-box{position:absolute;top:12px;right:12px;width:clamp(72px,14vw,110px);background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.15);border-radius:12px;backdrop-filter:blur(4px);display:flex;flex-direction:column;align-items:center;padding:6px 4px}
+#next-box .label{color:rgba(255,255,255,.5);font-size:clamp(9px,1.5vw,12px);text-transform:uppercase;letter-spacing:1px}
+#next-preview{width:clamp(36px,8vw,60px);height:clamp(36px,8vw,60px);position:relative}
+#next-name{color:rgba(255,255,255,.6);font-size:clamp(8px,1.2vw,11px);font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+/* Launcher label */
+#launcher-label{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);text-align:center;color:rgba(255,255,255,.35);font-size:clamp(9px,1.3vw,12px);letter-spacing:0.5px}
+#launcher-name{color:#f0c040;font-weight:600}
+/* Combo badge */
+#combo{position:fixed;top:72px;left:50%;transform:translateX(-50%) scale(0.85);opacity:0;color:#fff;background:linear-gradient(180deg,#ff8a00,#ff3d7f);border:2px solid #fff;border-radius:999px;padding:4px 14px;font:900 clamp(14px,2.5vw,20px) system-ui,sans-serif;text-shadow:0 1px 3px #000;transition:opacity 160ms,transform 160ms;z-index:40;pointer-events:none}
+#combo.show{opacity:1;transform:translateX(-50%) scale(1)}
+/* Level badges */
+.level-badge{position:fixed;pointer-events:none;z-index:15;width:clamp(16px,2.5vw,24px);height:clamp(16px,2.5vw,24px);border-radius:50%;background:rgba(0,0,0,.65);border:1.5px solid rgba(255,255,255,.5);color:#fff;font:700 clamp(8px,1.3vw,12px) system-ui,sans-serif;display:flex;align-items:center;justify-content:center;text-shadow:0 1px 2px #000;transform:translate(-50%,-50%);backdrop-filter:blur(2px)}
+/* Admin panel */
+#admin-bar{position:fixed;bottom:6px;right:6px;z-index:30;display:flex;align-items:center;gap:6px;pointer-events:none}
+#admin-bar>*{pointer-events:auto}
+#ver-stamp{color:rgba(255,255,255,.15);font:9px/1 monospace,sans-serif;letter-spacing:0.5px}
+#admin-lock{font:14px/1 system-ui,sans-serif;cursor:pointer;color:rgba(255,255,255,.15);transition:color .2s;background:none;border:none;padding:0}
+#admin-lock:hover{color:rgba(255,255,255,.5)}
+#admin-panel{position:fixed;z-index:35;display:none;flex-direction:column;gap:4px;padding:6px;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.15);border-radius:6px;backdrop-filter:blur(6px);bottom:28px;right:6px;width:130px;pointer-events:auto}
+#admin-panel.active{display:flex}
+#admin-panel .a-title{color:rgba(255,255,255,.4);font:8px system-ui,sans-serif;text-transform:uppercase;letter-spacing:1px;text-align:center}
+#admin-panel button{font:10px system-ui,sans-serif;padding:3px 6px;border-radius:4px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff;cursor:pointer;transition:background .15s;text-align:left}
+#admin-panel button:hover{background:rgba(255,255,255,.15)}
+#admin-panel button.sel{background:rgba(240,192,64,.3);border-color:#f0c040}
+#admin-panel .sep{border-top:1px solid rgba(255,255,255,.1);margin:2px 0}
+/* Score popup */
+.score-popup{position:fixed;pointer-events:none;z-index:50;color:#fff8b5;font:800 clamp(16px,3vw,26px) system-ui,sans-serif;text-shadow:0 2px 6px #000,0 0 16px #ff9,0 0 30px rgba(255,200,50,.3);will-change:transform,opacity,left,top}
+/* Game Over / Victory */
+#gameover,#victory{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7);backdrop-filter:blur(8px)}
+#gameover.active,#victory.active{display:flex}
+#gameover-box,#victory-box{background:linear-gradient(145deg,rgba(30,10,50,.95),rgba(15,5,30,.98));border:2px solid #f0c040;border-radius:18px;padding:clamp(24px,5vw,48px);text-align:center;max-width:420px;width:90%;box-shadow:0 0 60px rgba(240,192,64,.2)}
+#victory-box{border-color:#4caf50;box-shadow:0 0 60px rgba(76,175,80,.25)}
+#gameover-box h2,#victory-box h2{font-size:clamp(28px,5vw,44px);margin-bottom:8px;text-shadow:0 2px 10px rgba(240,192,64,.3)}
+#gameover-box h2{color:#f0c040}
+#victory-box h2{color:#4caf50}
+#gameover-box .sub,#victory-box .sub{color:rgba(255,255,255,.6);font-size:14px;margin-bottom:16px}
+#gameover-box .final-score,#victory-box .final-score{color:#fff;font-size:clamp(32px,6vw,52px);font-weight:700;margin:12px 0}
+#gameover-box .final-score span,#victory-box .final-score span{color:#f0c040}
+#restart-btn,#victory-next-btn{background:linear-gradient(135deg,#f0c040,#d4a020);border:none;color:#1a0a2e;font-size:clamp(16px,3vw,22px);font-weight:700;padding:12px 36px;border-radius:10px;cursor:pointer;transition:transform .15s,box-shadow .15s;margin-top:12px}
+#restart-btn:hover,#victory-next-btn:hover{transform:scale(1.05);box-shadow:0 4px 24px rgba(240,192,64,.4)}
+#restart-btn:active,#victory-next-btn:active{transform:scale(.97)}
+/* Merge flash */
+.merge-flash{position:fixed;inset:0;z-index:5;pointer-events:none;opacity:0;transition:opacity .15s}
+.merge-flash.active{opacity:1}
+</style>
+</head>
+<body>
+<div id="game-container"></div>
+<div id="hud">
+  <div id="goal-box">
+    <div class="g-label">Goal</div>
+    <div class="g-text" id="goal-text">Reach Level 4</div>
+    <div class="g-progress"><div class="g-fill" id="goal-fill" style="width:0%"></div></div>
+  </div>
+  <div id="score">SCORE: <span id="score-val">0</span></div>
+  <div id="combo"></div>
+  <div id="next-box">
+    <div class="label">NEXT</div>
+    <div id="next-preview"></div>
+    <div id="next-name"></div>
+  </div>
+  <div id="launcher-label">Launching: <span id="launcher-name"></span></div>
+</div>
+<div id="gameover">
+  <div id="gameover-box">
+    <h2>Game Over</h2>
+    <div class="sub">Final Score</div>
+    <div class="final-score"><span id="final-score">0</span></div>
+    <button id="restart-btn">▶ Play Again</button>
+  </div>
+</div>
+<div id="victory">
+  <div id="victory-box">
+    <h2>🎉 Victory!</h2>
+    <div class="sub" id="victory-desc">Goal Complete!</div>
+    <div class="final-score"><span id="victory-score">0</span></div>
+    <button id="victory-next-btn">▶ Next Goal</button>
+  </div>
+</div>
+<!-- Admin -->
+<div id="admin-bar"><span id="ver-stamp">07/26/26 10:52 EST</span><button id="admin-lock" title="Admin mode">🔒</button></div>
+<div id="admin-panel">
+  <div class="a-title">Set Next Throw</div>
+  <button id="admin-random" style="background:rgba(60,200,60,.2);border-color:#4caf50;text-align:center;font-weight:700">🎲 Normal</button>
+  <button data-type="0">Golf Ball</button>
+  <button data-type="1">Snorkel Mask</button>
+  <button data-type="2">Snorkel Fins</button>
+  <button data-type="3">Shrimp</button>
+  <button data-type="4">Grouper Fish</button>
+  <button data-type="5">Golf Cart</button>
+  <button data-type="6">Palm Tree</button>
+  <button data-type="7">Flamingo</button>
+  <div class="sep"></div>
+  <div class="a-title">Power-ups</div>
+  <button data-type="8">🍺 1x Beer</button>
+  <button data-type="9">🍺 2x Beer</button>
+  <button data-type="10">💣 Small Bomb</button>
+  <button data-type="11">💥 Big Bomb</button>
+</div>
+<div id="merge-flash" class="merge-flash"></div>
+
+<script>
+(function(){
+'use strict';
+
+// ============================================================
+// CONFIG — item types are fixed: two same-type items merge into
+// a larger version of the same type. Level = size progression.
+// ============================================================
+const ITEM_COLORS = ['#ffffff','#00e5ff','#ffeb3b','#ff9800','#ff4081','#e0e0e0','#8d6e63','#ff69b4','#ffb300','#ffb300','#222222','#444444'];
+const ITEM_NAMES = ['Golf Ball','Snorkel Mask','Snorkel Fins','Shrimp','Grouper Fish','Golf Cart','Palm Tree','Pink Flamingo','1x Beer','2x Beer','Small Bomb','Big Bomb'];
+const ITEM_COUNT = 12;
+const MAX_LEVEL = 9; // levels 0-9, badge shows level+1 (1-10)
+const SCORE_PER_LEVEL = 100;
+const TABLE_LENGTH = 10;
+const TABLE_WIDTH = 5.76;
+const halfW = TABLE_WIDTH / 2;
+const halfL = TABLE_LENGTH / 2;
+const LAUNCHER_Z = halfL - 1; // z=4
+const DEADLINE_Z = 2;
+const MAX_QUEUE = 3;
+
+const BALANCE = {
+  gravityY: -14,
+  gravityZ: -1.5,
+  launchZImpulse: -18,
+  launchYImpulse: 3.0,
+  sideImpulseMax: 0.8,
+  friction: 0.7,
+  restitution: 0.35,
+  linearDamping: 0.35,
+  angularDamping: 0, // zero — any spin from wall friction persists forever
+  deadlineSeconds: 2.75,
+  launchGraceMs: 1500,
+  seedCountMin: 7,
+  seedCountMax: 9,
+  settleSpeed: 0.18,
+  settleAgeMs: 700,
+  comboWindowMs: 1800,
+};
+
+// ============================================================
+// SCENE SETUP
+// ============================================================
+const container = document.getElementById('game-container');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1a0a2e);
+
+const camera = new THREE.PerspectiveCamera(48, container.clientWidth / container.clientHeight, 0.1, 100);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(container.clientWidth, container.clientHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+container.appendChild(renderer.domElement);
+
+scene.add(new THREE.AmbientLight(0x404060, 0.5));
+const dirLight = new THREE.DirectionalLight(0xffeedd, 1.2);
+dirLight.position.set(10, 20, 10);
+dirLight.castShadow = true;
+dirLight.shadow.mapSize.width = 2048;
+dirLight.shadow.mapSize.height = 2048;
+dirLight.shadow.camera.near = 0.5;
+dirLight.shadow.camera.far = 50;
+dirLight.shadow.camera.left = -15;
+dirLight.shadow.camera.right = 15;
+dirLight.shadow.camera.top = 15;
+dirLight.shadow.camera.bottom = -15;
+scene.add(dirLight);
+const fillLight = new THREE.DirectionalLight(0x8888ff, 0.3);
+fillLight.position.set(-8, 6, -10);
+scene.add(fillLight);
+const rimLight = new THREE.DirectionalLight(0xffffff, 0.4);
+rimLight.position.set(0, 2, -12);
+scene.add(rimLight);
+
+// ============================================================
+// PHYSICS
+// ============================================================
+const world = new CANNON.World();
+world.gravity.set(0, BALANCE.gravityY, 0);
+world.broadphase = new CANNON.NaiveBroadphase();
+world.solver.iterations = 10;
+const defaultMaterial = new CANNON.Material('default');
+world.addContactMaterial(new CANNON.ContactMaterial(defaultMaterial, defaultMaterial, {
+  friction: BALANCE.friction, restitution: BALANCE.restitution,
+}));
+
+// ============================================================
+// TABLE
+// ============================================================
+const tableMat = new THREE.MeshStandardMaterial({ color: 0x5d4037, roughness: 0.7, metalness: 0.1 });
+const tableMesh = new THREE.Mesh(new THREE.BoxGeometry(TABLE_WIDTH, 0.3, TABLE_LENGTH), tableMat);
+tableMesh.position.y = -0.15;
+tableMesh.receiveShadow = tableMesh.castShadow = true;
+scene.add(tableMesh);
+const tableBody = new CANNON.Body({ mass: 0, material: defaultMaterial });
+tableBody.addShape(new CANNON.Box(new CANNON.Vec3(halfW, 0.15, halfL)));
+tableBody.position.set(0, -0.15, 0);
+world.addBody(tableBody);
+for (let i = -halfL + 0.5; i < halfL - 0.4; i += 1) {
+  const p = new THREE.Mesh(new THREE.BoxGeometry(TABLE_WIDTH - 0.2, 0.02, 0.8),
+    new THREE.MeshStandardMaterial({ color: 0x6d4c41, roughness: 0.9, transparent: true, opacity: 0.15 }));
+  p.position.set(0, 0.01, i); scene.add(p);
+}
+function addWall(x, z, w, h, d) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d),
+    new THREE.MeshStandardMaterial({ color: 0x3e2723, roughness: 0.8, metalness: 0.2 }));
+  m.position.set(x, h/2, z); m.receiveShadow = m.castShadow = true; scene.add(m);
+  const b = new CANNON.Body({ mass: 0, material: defaultMaterial });
+  b.addShape(new CANNON.Box(new CANNON.Vec3(w/2, h/2, d/2))); b.position.set(x, h/2, z); world.addBody(b);
+}
+const WH = 1.2, WT = 0.2;
+addWall(0, -halfL - WT/2, TABLE_WIDTH + WT*2, WH, WT);
+addWall(-halfW - WT/2, 0, WT, WH, TABLE_LENGTH);
+addWall(halfW + WT/2, 0, WT, WH, TABLE_LENGTH);
+
+// Deadline
+const deadlineMat = new THREE.LineBasicMaterial({ color: 0xff3333, transparent: true, opacity: 0.75 });
+const dlPts = [];
+for (let x = -halfW + 0.3; x <= halfW - 0.3; x += 0.15)
+  dlPts.push(new THREE.Vector3(x, 0.02 + Math.sin(x*8)*0.03, DEADLINE_Z));
+const deadlineLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(dlPts), deadlineMat);
+scene.add(deadlineLine);
+const barrierMesh = new THREE.Mesh(new THREE.PlaneGeometry(TABLE_WIDTH - 0.5, 1.0),
+  new THREE.MeshStandardMaterial({ color: 0xff1744, transparent: true, opacity: 0.08, side: THREE.DoubleSide }));
+barrierMesh.position.set(0, 0.5, DEADLINE_Z); scene.add(barrierMesh);
+
+// ============================================================
+// AIM GUIDE
+// ============================================================
+const TRAJ_POINTS = 60;
+const trajPos = new Float32Array(TRAJ_POINTS * 3);
+const trajGeo = new THREE.BufferGeometry();
+trajGeo.setAttribute('position', new THREE.BufferAttribute(trajPos, 3));
+trajGeo.setDrawRange(0, 0);
+const trajMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.4 });
+const trajLine = new THREE.Line(trajGeo, trajMat);
+trajLine.visible = false; scene.add(trajLine);
+
+// ============================================================
+// ITEM MESH BUILDER (takes item TYPE index, builds shape)
+// ============================================================
+/** Radius for a given level (size progression) */
+function getLevelRadius(level) { return 0.28 + level * 0.1; }
+/** Base radius the mesh shapes were designed for */
+const BASE_RADIUS = 0.35;
+
+function buildItemMesh(type) {
+  const c = ITEM_COLORS[type], g = new THREE.Group();
+  switch(type) {
+    case 0: { // Golf Ball
+      const r = 0.32;
+      const mat = new THREE.MeshStandardMaterial({ color: c, roughness: 0.72, metalness: 0.02 });
+      const dm = new THREE.MeshStandardMaterial({ color: 0xcfcfca, roughness: 0.85, metalness: 0.0 });
+      const ball = new THREE.Mesh(new THREE.SphereGeometry(r, 40, 32), mat);
+      ball.castShadow = true; g.add(ball);
+      const rings = [
+        { y: 0.27, n: 5 },  { y: 0.20, n: 10 },  { y: 0.12, n: 15 },
+        { y: 0.04, n: 18 },  { y: -0.04, n: 18 }, { y: -0.12, n: 15 },
+        { y: -0.20, n: 10 }, { y: -0.27, n: 5 }
+      ];
+      rings.forEach((a, ri) => {
+        const rr = Math.sqrt(r * r - a.y * a.y);
+        for (let i = 0; i < a.n; i++) {
+          const p = (i / a.n) * Math.PI * 2 + (ri % 2 ? Math.PI / a.n : 0);
+          const d = new THREE.Mesh(new THREE.SphereGeometry(0.018, 10, 8), dm);
+          d.position.set(Math.cos(p) * rr * 0.995, a.y, Math.sin(p) * rr * 0.995);
+          d.scale.set(1, 0.45, 1); d.lookAt(0, 0, 0); g.add(d);
+        }
+      });
+      for (let s of [1, -1]) {
+        for (let i = 0; i < 5; i++) {
+          const p = (i / 5) * Math.PI * 2 + Math.PI / 5;
+          const y = s * 0.305;
+          const rr = Math.sqrt(r * r - y * y);
+          const d = new THREE.Mesh(new THREE.SphereGeometry(0.016, 10, 8), dm);
+          d.position.set(Math.cos(p) * rr * 0.9, y, Math.sin(p) * rr * 0.9);
+          d.scale.set(1, 0.45, 1); d.lookAt(0, 0, 0); g.add(d);
+        }
+      }
+      g.userData.visualScale = 0.5; // golf ball occupies full radius — halve it
+      break;
+    }
+    case 1: { // Snorkel Mask — angled 45° for top-down view
+      const glassMat = new THREE.MeshStandardMaterial({ color: 0xc8f2ff, transparent: true, opacity: 0.68, roughness: 0.05, metalness: 0.1, depthWrite: false });
+      const frameMat = new THREE.MeshStandardMaterial({ color: c, roughness: 0.25, metalness: 0.15 }); // c = ITEM_COLORS[1] = cyan
+      const skirtMat = new THREE.MeshStandardMaterial({ color: 0x182633, roughness: 0.5, metalness: 0.05 });
+      const strapMat = new THREE.MeshStandardMaterial({ color: 0x111b24, roughness: 0.6, metalness: 0.05 });
+      const snorkelBodyMat = new THREE.MeshStandardMaterial({ color: 0xf0f5f8, roughness: 0.2, metalness: 0.1 });
+      const accentMat = new THREE.MeshStandardMaterial({ color: 0x00b4d8, roughness: 0.3, metalness: 0.1 });
+      const safetyMat = new THREE.MeshStandardMaterial({ color: 0xff2a2a, roughness: 0.3, metalness: 0.1 });
+      const mouthpieceMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.7, metalness: 0.0 });
+      const shineMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.88, roughness: 0.05 });
+      const baseDiscMat = new THREE.MeshStandardMaterial({ color: 0x17c3b2, transparent: true, opacity: 0.35, roughness: 0.3 });
+
+      const add = (m, x, y, z, sx = 1, sy = 1, sz = 1, rx = 0, ry = 0, rz = 0, parent = g) => {
+        m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.rotation.set(rx, ry, rz); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m;
+      };
+
+      // Water disc stays flat on the floor
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.008, 32), baseDiscMat), 0, 0.004, 0);
+      add(new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.006, 8, 32), baseDiscMat), 0, 0.008, 0, 1, 1, 1, Math.PI / 2, 0, 0);
+
+      // Sub-group angled -45° around X to face the overhead camera
+      const maskGroup = new THREE.Group();
+      maskGroup.position.set(0, 0.18, -0.01);
+      maskGroup.rotation.set(-Math.PI / 4, 0, 0);
+      g.add(maskGroup);
+
+      add(new THREE.Mesh(new THREE.TorusGeometry(0.058, 0.01, 12, 32), frameMat), -0.06, 0, 0, 1, 1.05, 1, 0, 0, 0, maskGroup);
+      add(new THREE.Mesh(new THREE.TorusGeometry(0.058, 0.01, 12, 32), frameMat), 0.06, 0, 0, 1, 1.05, 1, 0, 0, 0, maskGroup);
+      add(new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.024, 0.02), frameMat), 0, 0.005, 0.002, 1, 1, 1, 0, 0, 0, maskGroup);
+      add(new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.014, 0.024), accentMat), 0, 0.008, 0.004, 1, 1, 1, 0, 0, 0, maskGroup);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.054, 0.054, 0.006, 32), glassMat), -0.06, 0, 0.002, 1, 1, 1.05, Math.PI / 2, 0, 0, maskGroup);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.054, 0.054, 0.006, 32), glassMat), 0.06, 0, 0.002, 1, 1, 1.05, Math.PI / 2, 0, 0, maskGroup);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.068, 0.045, 24), skirtMat), -0.06, 0, -0.022, 1, 1, 0.85, Math.PI / 2, 0, -0.08, maskGroup);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.068, 0.045, 24), skirtMat), 0.06, 0, -0.022, 1, 1, 0.85, Math.PI / 2, 0, 0.08, maskGroup);
+      add(new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.012, 12, 32), skirtMat), 0, -0.01, -0.045, 1.1, 0.75, 1, 0, 0, 0, maskGroup);
+      add(new THREE.Mesh(new THREE.ConeGeometry(0.032, 0.058, 16), skirtMat), 0, -0.04, 0.025, 1, 1, 0.85, 0.35, 0, 0, maskGroup);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.02, 16, 16), skirtMat), 0, -0.055, 0.032, 1, 0.8, 1, 0, 0, 0, maskGroup);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.008, 16), accentMat), 0, -0.068, 0.034, 1, 1, 1, 0.5, 0, 0, maskGroup);
+      add(new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.028, 0.028), accentMat), -0.125, 0, -0.015, 1, 1, 1, 0, 0, 0.15, maskGroup);
+      add(new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.028, 0.028), accentMat), 0.125, 0, -0.015, 1, 1, 1, 0, 0, -0.15, maskGroup);
+      add(new THREE.Mesh(new THREE.TorusGeometry(0.125, 0.007, 10, 32, Math.PI * 1.05), strapMat), 0, 0.01, -0.07, 1.02, 0.85, 0.9, 0.1, 0, Math.PI, maskGroup);
+      add(new THREE.Mesh(new THREE.TorusGeometry(0.125, 0.007, 10, 32, Math.PI * 1.05), strapMat), 0, -0.02, -0.07, 1.02, 0.85, 0.9, -0.1, 0, Math.PI, maskGroup);
+      add(new THREE.Mesh(new THREE.TorusGeometry(0.018, 0.005, 10, 24), accentMat), -0.138, 0.01, -0.01, 1, 1, 1, 0, Math.PI / 2, 0, maskGroup);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.22, 24), snorkelBodyMat), -0.145, 0.11, -0.03, 1, 1, 1, -0.12, 0, -0.08, maskGroup);
+
+      const flexCenterY = -0.04, flexCenterX = -0.13, flexCenterZ = -0.01;
+      for (let i = 0; i < 7; i++) {
+        const t = i / 6, angle = t * Math.PI * 0.55;
+        add(new THREE.Mesh(new THREE.TorusGeometry(0.015, 0.004, 10, 20), skirtMat),
+          flexCenterX + Math.sin(angle) * 0.035, flexCenterY - Math.cos(angle) * 0.045, flexCenterZ + t * 0.03,
+          1, 1, 1, 0, angle, 0, maskGroup);
+      }
+
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, 0.035, 16), mouthpieceMat), -0.075, -0.075, 0.035, 1, 1, 1, 0.4, 0.8, -0.3, maskGroup);
+      add(new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.012, 0.025), mouthpieceMat), -0.055, -0.072, 0.045, 1, 1, 1, 0.2, 0.6, 0, maskGroup);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.017, 0.014, 0.03, 24), accentMat), -0.162, 0.218, -0.043, 1, 1, 1, -0.12, 0, -0.08, maskGroup);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.018, 24), safetyMat), -0.164, 0.238, -0.045, 1, 1, 1, -0.12, 0, -0.08, maskGroup);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.018, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2), safetyMat), -0.165, 0.247, -0.046, 1, 1, 1, -0.12, 0, -0.08, maskGroup);
+
+      for (let i = 0; i < 4; i++) {
+        const ventAngle = (i / 4) * Math.PI * 2;
+        add(new THREE.Mesh(new THREE.BoxGeometry(0.005, 0.012, 0.005), mouthpieceMat),
+          -0.164 + Math.cos(ventAngle) * 0.012, 0.238, -0.045 + Math.sin(ventAngle) * 0.012,
+          1, 1, 1, -0.12, ventAngle, -0.08, maskGroup);
+      }
+
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.013, 12, 12), shineMat), -0.042, 0.02, 0.012, 1, 0.35, 1, 0, 0, 0, maskGroup);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.013, 12, 12), shineMat), 0.078, 0.02, 0.012, 1, 0.35, 1, 0, 0, 0, maskGroup);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.006, 12, 12), shineMat), 0, 0.015, 0.016, 1, 1, 1, 0, 0, 0, maskGroup);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.16, 12), shineMat), -0.138, 0.115, -0.017, 1, 1, 1, -0.12, 0, -0.08, maskGroup);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.007, 12, 12), shineMat), -0.156, 0.245, -0.035, 1, 1, 1, 0, 0, 0, maskGroup);
+      break;
+    }
+    case 2: { // Snorkel Fins
+      const fin = new THREE.MeshStandardMaterial({ color: c, roughness: 0.5, metalness: 0.02 });
+      const rail = new THREE.MeshStandardMaterial({ color: 0xf6a800, roughness: 0.48, metalness: 0.02 });
+      const dark = new THREE.MeshStandardMaterial({ color: 0x21333a, roughness: 0.7, metalness: 0.0 });
+      const hi = new THREE.MeshStandardMaterial({ color: 0xfff17a, roughness: 0.42, metalness: 0.02 });
+      const add = (m, x, y, z, sx = 1, sy = 1, sz = 1, rx = 0, ry = 0, rz = 0, p = g) => {
+        m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.rotation.set(rx, ry, rz); m.castShadow = true; p.add(m); return m;
+      };
+      for (let s of [-1, 1]) {
+        const f = new THREE.Group(); f.position.x = s * 0.105; f.rotation.z = s * 0.08;
+        g.add(f);
+        add(new THREE.Mesh(new THREE.BoxGeometry(0.105, 0.032, 0.28), fin), 0, 0.025, -0.075, 1, 1, 1, 0, 0, 0, f);
+        add(new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.028, 0.11), fin), 0, 0.023, -0.27, 1, 1, 1, 0, 0, 0, f);
+        add(new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.024, 0.075), fin), 0, 0.021, -0.355, 1, 1, 1, 0, 0, 0, f);
+        add(new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.013, 0.43, 12), rail), -0.066, 0.045, -0.12, 1, 1, 1, Math.PI / 2, 0, 0, f);
+        add(new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.013, 0.43, 12), rail), 0.066, 0.045, -0.12, 1, 1, 1, Math.PI / 2, 0, 0, f);
+        add(new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 0.31, 10), hi), -0.03, 0.055, -0.13, 1, 1, 1, Math.PI / 2, 0, 0, f);
+        add(new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 0.31, 10), hi), 0.03, 0.055, -0.13, 1, 1, 1, Math.PI / 2, 0, 0, f);
+        add(new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.24, 10), rail), 0, 0.06, -0.11, 1, 1, 1, Math.PI / 2, 0, 0, f);
+        add(new THREE.Mesh(new THREE.SphereGeometry(0.082, 24, 16), fin), 0, 0.055, 0.145, 0.9, 0.42, 1.05, 0, 0, 0, f);
+        add(new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.045, 0.12), fin), 0, 0.052, 0.105, 1, 1, 1, 0, 0, 0, f);
+        add(new THREE.Mesh(new THREE.TorusGeometry(0.055, 0.014, 12, 28), dark), 0, 0.09, 0.15, 1.15, 0.72, 0.3, 0, 0, 0, f);
+        add(new THREE.Mesh(new THREE.TorusGeometry(0.072, 0.012, 12, 28), dark), 0, 0.07, 0.245, 1.15, 0.42, 0.22, 0, 0, 0, f);
+        add(new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.035, 0.035), dark), -0.07, 0.06, 0.19, 1, 1, 1, 0, 0, 0, f);
+        add(new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.035, 0.035), dark), 0.07, 0.06, 0.19, 1, 1, 1, 0, 0, 0, f);
+        add(new THREE.Mesh(new THREE.SphereGeometry(0.025, 12, 8), hi), -0.03, 0.082, 0.055, 1.4, 0.35, 0.5, 0, 0, 0, f);
+        add(new THREE.Mesh(new THREE.SphereGeometry(0.025, 12, 8), hi), 0.03, 0.082, 0.055, 1.4, 0.35, 0.5, 0, 0, 0, f);
+      }
+      g.rotation.x = -0.08; g.rotation.y = -0.18; g.scale.setScalar(0.92);
+      break;
+    }
+    case 3: { // Shrimp — same original build
+      const mat = new THREE.MeshStandardMaterial({ color: c, roughness: 0.5, metalness: 0.2 });
+      for (let i = 0; i < 8; i++) {
+        const t = i / 8, s = new THREE.Mesh(new THREE.SphereGeometry(0.12 - t*0.04, 8, 8), mat);
+        const a = t * Math.PI * 0.8;
+        s.position.set(Math.sin(a)*0.25, 0.05, t*0.4 - 0.15);
+        s.scale.set(1, 0.7, 1 + t*0.5); s.castShadow = true; g.add(s);
+      }
+      const fm = new THREE.MeshStandardMaterial({ color: 0xff6f00 });
+      for (const s of [-1, 1]) {
+        const f = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.02, 0.12), fm);
+        f.position.set(s*0.1, 0.02, 0.3); f.rotation.z = s*0.4; g.add(f);
+      }
+      const em = new THREE.MeshStandardMaterial({ color: 0x000000 });
+      for (const s of [-1, 1]) {
+        const e = new THREE.Mesh(new THREE.SphereGeometry(0.03, 6, 6), em);
+        e.position.set(s*0.06, 0.1, -0.18); g.add(e);
+      }
+      break;
+    }
+    case 4: { // Grouper Fish — exaggerated head, angled 45°
+      const bodyMat = new THREE.MeshStandardMaterial({ color: 0x5d6d3b, roughness: 0.8, metalness: 0.1 });
+      const bellyMat = new THREE.MeshStandardMaterial({ color: 0xd7ccc8, roughness: 0.8, metalness: 0.0 });
+      const lipMat = new THREE.MeshStandardMaterial({ color: 0x8d6e63, roughness: 0.6, metalness: 0.1 });
+      const darkMat = new THREE.MeshStandardMaterial({ color: 0x212121, roughness: 0.9, metalness: 0.0 });
+      const eyeMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2, metalness: 0.1 });
+      const glassMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.4, roughness: 0.0, metalness: 0.8 });
+      const finMat = new THREE.MeshStandardMaterial({ color: 0x795548, transparent: true, opacity: 0.9, roughness: 0.7, metalness: 0.1, side: THREE.DoubleSide });
+      const spotMat = new THREE.MeshStandardMaterial({ color: 0x3e2723, roughness: 0.9, metalness: 0.0 });
+      const shineMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.8, roughness: 0.0, metalness: 0.0 });
+      const baseDiscMat = new THREE.MeshStandardMaterial({ color: 0x17c3b2, transparent: true, opacity: 0.35, roughness: 0.3 });
+
+      const add = (m, x, y, z, sx = 1, sy = 1, sz = 1, rx = 0, ry = 0, rz = 0, parent = g) => {
+        m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.rotation.set(rx, ry, rz); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m;
+      };
+
+      // Water disc stays flat
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.01, 32), baseDiscMat), 0, 0.005, 0);
+      add(new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.006, 8, 32), baseDiscMat), 0, 0.01, 0, 1, 1, 1, Math.PI / 2, 0, 0);
+
+      // Sub-group angled -45° around X to face the overhead camera
+      const fishG = new THREE.Group();
+      fishG.position.set(0, 0.18, -0.01);
+      fishG.rotation.set(-Math.PI / 4, 0, 0);
+      g.add(fishG);
+
+      // Main head group
+      const headG = new THREE.Group();
+      headG.position.set(0, 0.22, 0);
+      fishG.add(headG);
+
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.16, 32, 24), bodyMat), 0, 0, 0, 1, 1.1, 1, 0, 0, 0, headG);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.15, 24, 16, 0, Math.PI * 2, Math.PI * 0.6, Math.PI * 0.4), bellyMat), 0, -0.02, 0, 1, 1, 1, 0, 0, 0, headG);
+
+      const mouthTilt = -0.15;
+      add(new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.025, 12, 24, Math.PI), lipMat), 0, -0.04, 0.12, 1.1, 1, 1, mouthTilt, 0, 0, headG);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.09, 16, 12), lipMat), 0, -0.10, 0.11, 1, 0.7, 1.2, mouthTilt, 0, 0, headG);
+      add(new THREE.Mesh(new THREE.TorusGeometry(0.095, 0.028, 12, 24, Math.PI), lipMat), 0, -0.08, 0.14, 1.1, 1, 1, mouthTilt + Math.PI, 0, 0, headG);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.08, 16, 12), darkMat), 0, -0.06, 0.10, 1, 0.5, 1, mouthTilt, 0, 0, headG);
+
+      const eyeAngleY = 0.5, eyeAngleX = -0.2;
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.06, 16, 12), bodyMat), -0.10, 0.08, 0.08, 1, 1, 1, 0, 0, 0, headG);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.045, 16, 12), eyeMat), -0.11, 0.09, 0.10, 1, 1, 1, eyeAngleX, eyeAngleY, 0, headG);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.02, 12, 8), darkMat), -0.12, 0.10, 0.13, 1, 1, 0.5, eyeAngleX, eyeAngleY, 0, headG);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.048, 16, 12), glassMat), -0.11, 0.09, 0.10, 1, 1, 1, 0, 0, 0, headG);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.06, 16, 12), bodyMat), 0.10, 0.08, 0.08, 1, 1, 1, 0, 0, 0, headG);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.045, 16, 12), eyeMat), 0.11, 0.09, 0.10, 1, 1, 1, eyeAngleX, -eyeAngleY, 0, headG);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.02, 12, 8), darkMat), 0.12, 0.10, 0.13, 1, 1, 0.5, eyeAngleX, -eyeAngleY, 0, headG);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.048, 16, 12), glassMat), 0.11, 0.09, 0.10, 1, 1, 1, 0, 0, 0, headG);
+
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.14, 16, 12, 0, Math.PI, 0, Math.PI), bodyMat), -0.06, -0.02, -0.05, 0.6, 1, 0.8, -Math.PI/2, Math.PI/2, 0, headG);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.14, 16, 12, 0, Math.PI, 0, Math.PI), bodyMat), 0.06, -0.02, -0.05, 0.6, 1, 0.8, -Math.PI/2, -Math.PI/2, 0, headG);
+
+      const bodyG = new THREE.Group();
+      bodyG.position.set(0, -0.05, -0.12);
+      bodyG.rotation.set(0.1, 0, 0);
+      headG.add(bodyG);
+
+      add(new THREE.Mesh(new THREE.ConeGeometry(0.10, 0.22, 16, 1, true), bodyMat), 0, 0, -0.08, 1, 1, 0.8, Math.PI / 2, 0, 0, bodyG);
+      add(new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.20, 12, 1, true), bellyMat), 0, -0.015, -0.08, 1, 1, 0.8, Math.PI / 2, 0, 0, bodyG);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.01, 0.01, 16), finMat), 0, 0, -0.21, 1.2, 1, 1, 0, 0, Math.PI/2, bodyG);
+
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.005, 12, 1, true, Math.PI * 0.8, Math.PI * 0.4), finMat), 0, 0.12, -0.05, 1, 1, 1, 0, Math.PI/2, 0, headG);
+      add(new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.005, 6, 16, Math.PI * 0.8), finMat), -0.16, -0.04, -0.02, 1, 1, 1, -0.2, 1.2, 0.5, headG);
+      add(new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.005, 6, 16, Math.PI * 0.8), finMat), 0.16, -0.04, -0.02, 1, 1, 1, -0.2, -1.2, -0.5, headG);
+
+      const spotCoords = [
+        {x:-0.08, y:0.12, z:-0.10}, {x:0.08, y:0.12, z:-0.10}, {x:0, y:0.16, z:-0.05},
+        {x:-0.05, y:0.05, z:-0.13}, {x:0.05, y:0.05, z:-0.13}, {x:0, y:-0.03, z:-0.16},
+        {x:-0.14, y:0.00, z:-0.08}, {x:0.14, y:0.00, z:-0.08}, {x:-0.03, y:-0.10, z:-0.18}, {x:0.03, y:-0.10, z:-0.18}
+      ];
+      spotCoords.forEach(c => add(new THREE.Mesh(new THREE.SphereGeometry(0.015, 8, 6), spotMat), c.x, c.y, c.z, 1, 0.2, 1, 0, 0, 0, headG));
+
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.015, 12, 12), shineMat), 0, -0.02, 0.14, 1, 1, 1, 0, 0, 0, headG);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.025, 12, 12), shineMat), 0, 0.10, 0.10, 1, 0.4, 1, 0, 0, 0, headG);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.012, 12, 12), shineMat), -0.11, 0.11, 0.13, 1, 1, 1, 0, 0, 0, headG);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.012, 12, 12), shineMat), 0.11, 0.11, 0.13, 1, 1, 1, 0, 0, 0, headG);
+      break;
+    }
+    case 5: { // Golf Cart
+      const white = new THREE.MeshStandardMaterial({ color: 0xf7f7f2, roughness: 0.44, metalness: 0.02 });
+      const blue = new THREE.MeshStandardMaterial({ color: 0x28a9df, roughness: 0.42, metalness: 0.02 });
+      const roof = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.38, metalness: 0.02 });
+      const dark = new THREE.MeshStandardMaterial({ color: 0x182026, roughness: 0.72, metalness: 0.0 });
+      const tire = new THREE.MeshStandardMaterial({ color: 0x080a0c, roughness: 0.82, metalness: 0.0 });
+      const hub = new THREE.MeshStandardMaterial({ color: 0xd8dde0, roughness: 0.32, metalness: 0.26 });
+      const glass = new THREE.MeshStandardMaterial({ color: 0x9eeeff, roughness: 0.12, metalness: 0.02, transparent: true, opacity: 0.62 });
+      const light = new THREE.MeshStandardMaterial({ color: 0xfff0a0, roughness: 0.28, metalness: 0.0 });
+      const red = new THREE.MeshStandardMaterial({ color: 0xff4545, roughness: 0.4, metalness: 0.0 });
+
+      const add = (m, x, y, z, sx = 1, sy = 1, sz = 1, rx = 0, ry = 0, rz = 0, p = g) => {
+        m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.rotation.set(rx, ry, rz); m.castShadow = true; p.add(m); return m;
+      };
+
+      const cart = new THREE.Group();
+      cart.rotation.set(-0.04, 0.48, 0.02);
+      g.add(cart);
+
+      add(new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.13, 0.5), white), 0, 0.115, 0.015, 1, 1, 1, 0, 0, 0, cart);
+      add(new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.06, 0.36), blue), 0, 0.195, 0.01, 1, 1, 1, 0, 0, 0, cart);
+      add(new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.075, 0.2), dark), 0, 0.255, 0.095, 1, 1, 1, 0, 0, 0, cart);
+      add(new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.035, 0.13), white), 0, 0.3, 0.105, 1, 1, 1, 0, 0, 0, cart);
+      add(new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.055, 0.12), white), 0, 0.17, -0.255, 1, 1, 1, 0, 0, 0, cart);
+      add(new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.04, 0.065), dark), 0, 0.205, -0.275, 1, 1, 1, 0, 0, 0, cart);
+      add(new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.055, 0.6), roof), 0, 0.54, -0.015, 1, 1, 1, 0, 0, 0, cart);
+      add(new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.028, 0.54), blue), 0, 0.506, -0.015, 1, 1, 1, 0, 0, 0, cart);
+
+      for (let x of [-0.2, 0.2]) {
+        add(new THREE.Mesh(new THREE.CylinderGeometry(0.017, 0.017, 0.36, 12), dark), x, 0.365, -0.215, 1, 1, 1, 0, 0, 0, cart);
+        add(new THREE.Mesh(new THREE.CylinderGeometry(0.017, 0.017, 0.36, 12), dark), x, 0.365, 0.215, 1, 1, 1, 0, 0, 0, cart);
+      }
+
+      add(new THREE.Mesh(new THREE.BoxGeometry(0.33, 0.022, 0.2), glass), 0, 0.385, -0.155, 1, 1, 1, -0.42, 0, 0, cart);
+      add(new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.012, 0.22), dark), 0, 0.387, -0.158, 1, 1, 1, -0.42, 0, 0, cart);
+
+      for (let x of [-0.255, 0.255]) {
+        for (let z of [-0.17, 0.19]) {
+          add(new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.065, 26), tire), x, 0.075, z, 1, 1, 1, 0, 0, Math.PI / 2, cart);
+          add(new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.075, 18), hub), x, 0.075, z, 1, 1, 1, 0, 0, Math.PI / 2, cart);
+        }
+      }
+
+      add(new THREE.Mesh(new THREE.TorusGeometry(0.052, 0.007, 10, 26), dark), -0.095, 0.29, -0.11, 1, 1, 1, Math.PI / 2.35, 0.2, 0.15, cart);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 0.085, 8), dark), -0.073, 0.265, -0.082, 1, 1, 1, 0.85, 0, -0.35, cart);
+      add(new THREE.Mesh(new THREE.BoxGeometry(0.095, 0.04, 0.04), light), -0.1, 0.18, -0.31, 1, 1, 1, 0, 0, 0, cart);
+      add(new THREE.Mesh(new THREE.BoxGeometry(0.095, 0.04, 0.04), light), 0.1, 0.18, -0.31, 1, 1, 1, 0, 0, 0, cart);
+      add(new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.04, 0.04), dark), 0, 0.125, -0.33, 1, 1, 1, 0, 0, 0, cart);
+      add(new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.035, 0.035), red), -0.11, 0.17, 0.29, 1, 1, 1, 0, 0, 0, cart);
+      add(new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.035, 0.035), red), 0.11, 0.17, 0.29, 1, 1, 1, 0, 0, 0, cart);
+      add(new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.04, 0.075), dark), -0.105, 0.265, 0.18, 1, 1, 1, 0, 0, 0, cart);
+      add(new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.04, 0.075), dark), 0.105, 0.265, 0.18, 1, 1, 1, 0, 0, 0, cart);
+      add(new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.035, 0.12), white), -0.19, 0.185, 0.02, 1, 1, 1, 0, 0, 0, cart);
+      add(new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.035, 0.12), white), 0.19, 0.185, 0.02, 1, 1, 1, 0, 0, 0, cart);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.03, 12, 8), roof), -0.15, 0.575, -0.2, 1.7, 0.35, 0.55, 0, 0, 0, cart);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.027, 12, 8), roof), 0.12, 0.575, 0.08, 1.6, 0.34, 0.5, 0, 0, 0, cart);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.024, 12, 8), glass), -0.09, 0.405, -0.075, 1.7, 0.34, 0.3, 0, 0, 0, cart);
+
+      g.rotation.x = -0.04;
+      g.rotation.y = 0.1;
+      g.rotation.z = 0;
+      g.scale.setScalar(1.05);
+      break;
+    }
+    case 6: { // Palm Tree
+      const trunk = new THREE.MeshStandardMaterial({ color: 0xa86632, roughness: 0.68, metalness: 0.01 });
+      const bark = new THREE.MeshStandardMaterial({ color: 0x5f351a, roughness: 0.78, metalness: 0.0 });
+      const leaf = new THREE.MeshStandardMaterial({ color: 0x20b84f, roughness: 0.55, metalness: 0.01 });
+      const leaf2 = new THREE.MeshStandardMaterial({ color: 0x63e070, roughness: 0.52, metalness: 0.01 });
+      const coco = new THREE.MeshStandardMaterial({ color: 0x5a331b, roughness: 0.74, metalness: 0.0 });
+      const sand = new THREE.MeshStandardMaterial({ color: 0xe8c77e, roughness: 0.82, metalness: 0.0 });
+      const water = new THREE.MeshStandardMaterial({ color: 0x56d8d2, roughness: 0.58, metalness: 0.0, transparent: true, opacity: 0.78 });
+
+      const add = (m, x, y, z, sx = 1, sy = 1, sz = 1, rx = 0, ry = 0, rz = 0, p = g) => {
+        m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.rotation.set(rx, ry, rz); m.castShadow = true; p.add(m); return m;
+      };
+
+      const tree = new THREE.Group();
+      tree.rotation.set(-0.035, 0.25, 0.02);
+      g.add(tree);
+
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.3, 0.045, 40), water), 0, 0.022, 0, 1.12, 1, 0.88, 0, 0, 0, tree);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.23, 0.075, 38), sand), 0, 0.065, 0, 1.08, 1, 0.78, 0, 0, 0, tree);
+      add(new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.016, 10, 44), water), 0, 0.055, 0, 1.1, 0.78, 0.18, 0, 0, 0, tree);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.04, 14, 8), sand), -0.12, 0.107, 0.065, 1.5, 0.35, 0.8, 0, 0, 0, tree);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.032, 12, 8), sand), 0.11, 0.1, -0.06, 1.4, 0.32, 0.7, 0, 0, 0, tree);
+
+      const tr = new THREE.Group();
+      tr.position.set(0, 0.075, 0);
+      tr.rotation.z = -0.08;
+      tree.add(tr);
+
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.062, 0.09, 0.58, 24), trunk), 0, 0.32, 0, 1, 1, 1, 0, 0, 0, tr);
+
+      for (let i = 0; i < 9; i++) {
+        const y = 0.07 + i * 0.06;
+        const r = 0.088 - i * 0.003;
+        add(new THREE.Mesh(new THREE.TorusGeometry(r, 0.008, 8, 26), bark), 0, y, 0, 1, 1, 0.7, Math.PI / 2, 0, i * 0.45, tr);
+      }
+
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.09, 22, 14), bark), 0, 0.62, 0, 1.0, 0.75, 1.0, 0, 0, 0, tr);
+
+      const crown = new THREE.Group();
+      crown.position.set(-0.045, 0.69, 0);
+      crown.rotation.set(-0.05, 0.12, 0.08);
+      tree.add(crown);
+
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2;
+        const m = i % 2 ? leaf : leaf2;
+        const x = Math.cos(a);
+        const z = Math.sin(a);
+
+        const pod = new THREE.Mesh(new THREE.SphereGeometry(0.095, 20, 12), m);
+        pod.position.set(x * 0.145, 0.03, z * 0.145);
+        pod.scale.set(1.85, 0.34, 0.48);
+        pod.rotation.set(0.18, -a, -0.2);
+        pod.castShadow = true;
+        crown.add(pod);
+
+        const tip = new THREE.Mesh(new THREE.ConeGeometry(0.075, 0.22, 5), m);
+        tip.position.set(x * 0.255, 0.005, z * 0.255);
+        tip.scale.set(0.9, 0.8, 0.5);
+        tip.rotation.set(Math.PI / 2.45, 0, -a + Math.PI / 2);
+        tip.castShadow = true;
+        crown.add(tip);
+
+        const rib = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.23, 8), bark);
+        rib.position.set(x * 0.17, 0.045, z * 0.17);
+        rib.rotation.set(Math.PI / 2, 0, -a + Math.PI / 2);
+        rib.castShadow = true;
+        crown.add(rib);
+      }
+
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2 + 0.28;
+        const x = Math.cos(a);
+        const z = Math.sin(a);
+
+        const topLeaf = new THREE.Mesh(new THREE.SphereGeometry(0.075, 18, 10), leaf2);
+        topLeaf.position.set(x * 0.095, 0.115, z * 0.095);
+        topLeaf.scale.set(1.45, 0.32, 0.4);
+        topLeaf.rotation.set(0.05, -a, 0.25);
+        topLeaf.castShadow = true;
+        crown.add(topLeaf);
+      }
+
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.037, 14, 10), coco), -0.04, 0.655, 0.042, 1, 1, 1, 0, 0, 0, tree);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.034, 14, 10), coco), 0.015, 0.645, 0.05, 1, 1, 1, 0, 0, 0, tree);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.032, 14, 10), coco), -0.01, 0.63, -0.018, 1, 1, 1, 0, 0, 0, tree);
+
+      g.rotation.x = -0.03;
+      g.rotation.y = 0.1;
+      g.rotation.z = 0.02;
+      g.scale.setScalar(1.18);
+      break;
+    }
+    case 7: { // Pink Flamingo
+      const pink = new THREE.MeshStandardMaterial({ color: 0xff66a6, roughness: 0.5, metalness: 0.02 });
+      const pink2 = new THREE.MeshStandardMaterial({ color: 0xffa8c9, roughness: 0.48, metalness: 0.02 });
+      const wing = new THREE.MeshStandardMaterial({ color: 0xff358d, roughness: 0.55, metalness: 0.01 });
+      const dark = new THREE.MeshStandardMaterial({ color: 0x1c1a1f, roughness: 0.72, metalness: 0.0 });
+      const beak = new THREE.MeshStandardMaterial({ color: 0xffead2, roughness: 0.46, metalness: 0.0 });
+      const leg = new THREE.MeshStandardMaterial({ color: 0xf26b91, roughness: 0.58, metalness: 0.02 });
+      const eye = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.24, metalness: 0.0 });
+      const water = new THREE.MeshStandardMaterial({ color: 0x55d7d4, roughness: 0.58, metalness: 0.0, transparent: true, opacity: 0.78 });
+      const water2 = new THREE.MeshStandardMaterial({ color: 0x8af3ef, roughness: 0.5, metalness: 0.0, transparent: true, opacity: 0.75 });
+
+      const add = (m, x, y, z, sx = 1, sy = 1, sz = 1, rx = 0, ry = 0, rz = 0, p = g) => {
+        m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.rotation.set(rx, ry, rz); m.castShadow = true; p.add(m); return m;
+      };
+
+      const bird = new THREE.Group();
+      bird.rotation.set(-0.04, 0.28, 0.02);
+      g.add(bird);
+
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.31, 0.045, 40), water), 0.02, 0.022, 0, 1.05, 1, 0.82, 0, 0, 0, bird);
+      add(new THREE.Mesh(new THREE.TorusGeometry(0.245, 0.014, 10, 44), water2), 0.02, 0.052, 0, 1.08, 0.78, 0.16, 0, 0, 0, bird);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.18, 36, 22), pink), 0.03, 0.27, 0, 1.48, 0.86, 0.92, 0, 0, -0.03, bird);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.125, 30, 18), pink2), -0.09, 0.255, 0.005, 0.95, 0.58, 0.72, 0, 0, 0, bird);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.13, 28, 16), wing), 0.065, 0.29, 0.115, 1.46, 0.42, 0.44, 0.08, 0.18, -0.24, bird);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.105, 24, 14), wing), 0.155, 0.265, 0.125, 1.1, 0.32, 0.36, 0.08, 0.18, -0.35, bird);
+      add(new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.19, 4), wing), 0.25, 0.245, 0.115, 0.9, 0.55, 0.55, 0.08, 0.18, -Math.PI / 2.45, bird);
+      add(new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.2, 4), pink), 0.245, 0.265, 0, 0.88, 0.52, 0.72, 0, 0, -Math.PI / 2.1, bird);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.044, 0.26, 20), pink2), -0.13, 0.43, 0, 1, 1, 1, 0, 0, -0.34, bird);
+      add(new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.038, 20, 44), pink2), -0.055, 0.575, 0, 0.78, 1.08, 0.62, 0, Math.PI / 2, -1.02, bird);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.037, 0.04, 0.24, 20), pink2), 0.055, 0.705, 0, 1, 1, 1, 0.08, 0, 0.18, bird);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.095, 28, 18), pink), 0.11, 0.86, 0, 1.05, 0.86, 0.86, 0, 0, 0, bird);
+      add(new THREE.Mesh(new THREE.ConeGeometry(0.058, 0.15, 22), beak), 0.21, 0.845, 0, 1.08, 0.72, 0.72, 0, 0, -Math.PI / 2, bird);
+      add(new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.09, 20), dark), 0.295, 0.845, 0, 1.08, 0.62, 0.62, 0, 0, -Math.PI / 2, bird);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.018, 10, 8), eye), 0.13, 0.905, 0.065, 1, 1, 0.55, 0, 0, 0, bird);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.008, 8, 6), dark), 0.135, 0.906, 0.075, 1, 1, 0.55, 0, 0, 0, bird);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.018, 10, 8), eye), 0.13, 0.905, -0.065, 1, 1, 0.55, 0, 0, 0, bird);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.008, 8, 6), dark), 0.135, 0.906, -0.075, 1, 1, 0.55, 0, 0, 0, bird);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.32, 12), leg), -0.055, 0.13, 0.055, 1, 1, 1, 0.04, 0, 0.03, bird);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.26, 12), leg), 0.075, 0.135, -0.045, 1, 1, 1, 0.35, 0, -0.28, bird);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.17, 12), leg), 0.145, 0.08, -0.065, 1, 1, 1, 1.05, 0, -0.14, bird);
+      add(new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.022, 0.045), leg), -0.065, 0.035, 0.1, 1, 1, 1, 0, 0, 0.08, bird);
+      add(new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.022, 0.045), leg), 0.165, 0.035, -0.115, 1, 1, 1, 0, 0, -0.12, bird);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.035, 14, 10), pink2), -0.055, 0.33, 0.13, 1.8, 0.38, 0.34, 0, 0, 0, bird);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.026, 12, 8), pink2), 0.06, 0.305, 0.145, 1.55, 0.34, 0.3, 0, 0, 0, bird);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.023, 12, 8), pink2), 0.155, 0.275, 0.135, 1.45, 0.32, 0.28, 0, 0, 0, bird);
+
+      g.rotation.x = -0.025;
+      g.rotation.y = 0.08;
+      g.rotation.z = 0.02;
+      g.scale.setScalar(1.05);
+      break;
+    }
+    case 8: { // 1x Beer — angled 45° for top-down view
+      const glassMat = new THREE.MeshStandardMaterial({ color: 0xfff5e6, transparent: true, opacity: 0.38, roughness: 0.1, metalness: 0.1, depthWrite: false });
+      const liquidMat = new THREE.MeshStandardMaterial({ color: 0xf5a623, transparent: true, opacity: 0.85, roughness: 0.22, metalness: 0.05 });
+      const foamMat = new THREE.MeshStandardMaterial({ color: 0xfffdf0, roughness: 0.95, metalness: 0.0 });
+      const rimMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.55, roughness: 0.1 });
+      const shineMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.85, roughness: 0.05 });
+      const bubbleMat = new THREE.MeshStandardMaterial({ color: 0xffe89c, transparent: true, opacity: 0.65, roughness: 0.1 });
+      const baseDiscMat = new THREE.MeshStandardMaterial({ color: 0x22a699, transparent: true, opacity: 0.35, roughness: 0.3 });
+
+      const add = (m, x, y, z, sx = 1, sy = 1, sz = 1, rx = 0, ry = 0, rz = 0, parent = g) => {
+        m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.rotation.set(rx, ry, rz); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m;
+      };
+
+      // Water disc stays flat on the floor
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.008, 32), baseDiscMat), 0, 0.004, 0);
+      add(new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.006, 8, 32), baseDiscMat), 0, 0.008, 0, 1, 1, 1, Math.PI / 2, 0, 0);
+
+      // Sub-group angled -45° around X to face the overhead camera
+      const mugGroup = new THREE.Group();
+      mugGroup.position.set(0, 0.18, -0.01);
+      mugGroup.rotation.set(-Math.PI / 4, 0, 0);
+      g.add(mugGroup);
+
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.12, 0.04, 32), glassMat), 0, 0.025, 0, 1, 1, 1, 0, 0, 0, mugGroup);
+      add(new THREE.Mesh(new THREE.TorusGeometry(0.115, 0.012, 12, 32), glassMat), 0, 0.045, 0, 1, 1, 1, Math.PI / 2, 0, 0, mugGroup);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.105, 0.28, 32, 1, true), glassMat), 0, 0.185, 0, 1, 1, 1, 0, 0, 0, mugGroup);
+      add(new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.009, 12, 32), rimMat), 0, 0.325, 0, 1, 1, 1, Math.PI / 2, 0, 0, mugGroup);
+
+      for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2;
+        add(new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.22, 8), glassMat), Math.cos(angle)*0.118, 0.175, Math.sin(angle)*0.118, 1, 1, 1, 0, 0, 0, mugGroup);
+      }
+
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.122, 0.098, 0.24, 32), liquidMat), 0, 0.165, 0, 1, 1, 1, 0, 0, 0, mugGroup);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.122, 0.122, 0.005, 32), liquidMat), 0, 0.285, 0, 1, 1, 1, 0, 0, 0, mugGroup);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.135, 0.124, 0.04, 32), foamMat), 0, 0.305, 0, 1, 1, 1, 0, 0, 0, mugGroup);
+
+      const foamPositions = [
+        { x: 0, y: 0.33, z: 0, r: 0.07 }, { x: 0.07, y: 0.32, z: 0.04, r: 0.05 }, { x: -0.06, y: 0.325, z: 0.05, r: 0.055 },
+        { x: 0.05, y: 0.32, z: -0.06, r: 0.048 }, { x: -0.05, y: 0.32, z: -0.05, r: 0.052 }, { x: 0.09, y: 0.31, z: 0, r: 0.04 },
+        { x: -0.09, y: 0.31, z: 0.01, r: 0.042 }, { x: 0, y: 0.315, z: 0.09, r: 0.045 }, { x: 0.01, y: 0.315, z: -0.09, r: 0.043 }
+      ];
+      foamPositions.forEach(p => add(new THREE.Mesh(new THREE.SphereGeometry(p.r, 16, 16), foamMat), p.x, p.y, p.z, 1, 1, 1, 0, 0, 0, mugGroup));
+
+      const drips = [{ x: 0.125, y: 0.28, z: 0.03, r: 0.018 }, { x: -0.115, y: 0.275, z: 0.05, r: 0.022 }, { x: 0.04, y: 0.285, z: 0.12, r: 0.016 }];
+      drips.forEach(p => add(new THREE.Mesh(new THREE.SphereGeometry(p.r, 12, 12), foamMat), p.x, p.y, p.z, 1, 1, 1, 0, 0, 0, mugGroup));
+
+      add(new THREE.Mesh(new THREE.TorusGeometry(0.085, 0.018, 16, 32, Math.PI * 1.15), glassMat), 0.12, 0.175, 0, 1, 1, 1, 0, 0, -Math.PI / 2, mugGroup);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.03, 12), glassMat), 0.115, 0.25, 0, 1, 1, 1, 0, 0, Math.PI / 2, mugGroup);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.03, 12), glassMat), 0.105, 0.10, 0, 1, 1, 1, 0, 0, Math.PI / 2, mugGroup);
+
+      const bubbles = [
+        { x: 0.03, y: 0.08, z: 0.04, r: 0.009 }, { x: -0.04, y: 0.12, z: -0.02, r: 0.011 }, { x: 0.02, y: 0.16, z: -0.05, r: 0.008 },
+        { x: -0.03, y: 0.20, z: 0.03, r: 0.012 }, { x: 0.05, y: 0.23, z: 0.01, r: 0.009 }, { x: -0.02, y: 0.25, z: -0.03, r: 0.007 }
+      ];
+      bubbles.forEach(b => add(new THREE.Mesh(new THREE.SphereGeometry(b.r, 12, 12), bubbleMat), b.x, b.y, b.z, 1, 1, 1, 0, 0, 0, mugGroup));
+
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.2, 12), shineMat), -0.085, 0.185, 0.085, 1, 1, 1, 0.1, 0, -0.15, mugGroup);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.014, 12, 12), shineMat), -0.075, 0.07, 0.075, 1, 0.4, 1, 0, 0, 0, mugGroup);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.01, 12, 12), shineMat), 0.18, 0.21, 0.03, 1, 1, 1, 0, 0, 0, mugGroup);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.016, 12, 12), shineMat), -0.03, 0.35, 0.03, 1, 0.3, 1, 0, 0, 0, mugGroup);
+      break;
+    }
+    case 9: { // 2x Beer — two glasses side by side, angled 45°
+      const glassMat = new THREE.MeshStandardMaterial({ color: 0xfff5e6, transparent: true, opacity: 0.38, roughness: 0.1, metalness: 0.1, depthWrite: false });
+      const liquidMat = new THREE.MeshStandardMaterial({ color: 0xf5a623, transparent: true, opacity: 0.85, roughness: 0.22, metalness: 0.05 });
+      const foamMat = new THREE.MeshStandardMaterial({ color: 0xfffdf0, roughness: 0.95, metalness: 0.0 });
+      const rimMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.55, roughness: 0.1 });
+      const shineMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.85, roughness: 0.05 });
+      const bubbleMat = new THREE.MeshStandardMaterial({ color: 0xffe89c, transparent: true, opacity: 0.65, roughness: 0.1 });
+      const baseDiscMat = new THREE.MeshStandardMaterial({ color: 0x22a699, transparent: true, opacity: 0.35, roughness: 0.3 });
+
+      const add = (m, x, y, z, sx = 1, sy = 1, sz = 1, rx = 0, ry = 0, rz = 0, parent = g) => {
+        m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.rotation.set(rx, ry, rz); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m;
+      };
+
+      // Shared base disc stays flat
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.008, 32), baseDiscMat), 0, 0.004, 0);
+      add(new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.006, 8, 32), baseDiscMat), 0, 0.008, 0, 1, 1, 1, Math.PI / 2, 0, 0);
+
+      // Sub-group angled -45° around X to face the overhead camera
+      const mugGroup = new THREE.Group();
+      mugGroup.position.set(0, 0.18, -0.01);
+      mugGroup.rotation.set(-Math.PI / 4, 0, 0);
+      g.add(mugGroup);
+
+      const makeGlass = (xOff, zOff) => {
+        const cup = new THREE.Group();
+        cup.position.set(xOff, 0, zOff);
+        mugGroup.add(cup);
+
+        add(new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.12, 0.04, 32), glassMat), 0, 0.025, 0, 1, 1, 1, 0, 0, 0, cup);
+        add(new THREE.Mesh(new THREE.TorusGeometry(0.115, 0.012, 12, 32), glassMat), 0, 0.045, 0, 1, 1, 1, Math.PI / 2, 0, 0, cup);
+        add(new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.105, 0.28, 32, 1, true), glassMat), 0, 0.185, 0, 1, 1, 1, 0, 0, 0, cup);
+        add(new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.009, 12, 32), rimMat), 0, 0.325, 0, 1, 1, 1, Math.PI / 2, 0, 0, cup);
+
+        for (let i = 0; i < 8; i++) {
+          const angle = (i / 8) * Math.PI * 2;
+          add(new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.22, 8), glassMat), Math.cos(angle)*0.118, 0.175, Math.sin(angle)*0.118, 1, 1, 1, 0, 0, 0, cup);
+        }
+
+        add(new THREE.Mesh(new THREE.CylinderGeometry(0.122, 0.098, 0.24, 32), liquidMat), 0, 0.165, 0, 1, 1, 1, 0, 0, 0, cup);
+        add(new THREE.Mesh(new THREE.CylinderGeometry(0.122, 0.122, 0.005, 32), liquidMat), 0, 0.285, 0, 1, 1, 1, 0, 0, 0, cup);
+        add(new THREE.Mesh(new THREE.CylinderGeometry(0.135, 0.124, 0.04, 32), foamMat), 0, 0.305, 0, 1, 1, 1, 0, 0, 0, cup);
+
+        const foamPositions = [
+          { x: 0, y: 0.33, z: 0, r: 0.055 }, { x: 0.05, y: 0.32, z: 0.03, r: 0.04 }, { x: -0.04, y: 0.325, z: 0.04, r: 0.042 },
+          { x: 0.03, y: 0.32, z: -0.04, r: 0.036 }, { x: -0.03, y: 0.32, z: -0.04, r: 0.038 }, { x: 0.06, y: 0.31, z: 0, r: 0.03 },
+          { x: -0.06, y: 0.31, z: 0, r: 0.032 }, { x: 0, y: 0.315, z: 0.06, r: 0.034 }, { x: 0, y: 0.315, z: -0.06, r: 0.032 }
+        ];
+        foamPositions.forEach(p => add(new THREE.Mesh(new THREE.SphereGeometry(p.r, 16, 16), foamMat), p.x, p.y, p.z, 1, 1, 1, 0, 0, 0, cup));
+
+        const drips = [{ x: 0.09, y: 0.28, z: 0.02, r: 0.014 }, { x: -0.08, y: 0.275, z: 0.03, r: 0.016 }, { x: 0.02, y: 0.285, z: 0.08, r: 0.012 }];
+        drips.forEach(p => add(new THREE.Mesh(new THREE.SphereGeometry(p.r, 12, 12), foamMat), p.x, p.y, p.z, 1, 1, 1, 0, 0, 0, cup));
+
+        add(new THREE.Mesh(new THREE.TorusGeometry(0.065, 0.014, 16, 28, Math.PI * 1.15), glassMat), 0.09, 0.175, 0, 1, 1, 1, 0, 0, -Math.PI / 2, cup);
+        add(new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.025, 10), glassMat), 0.085, 0.24, 0, 1, 1, 1, 0, 0, Math.PI / 2, cup);
+        add(new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.025, 10), glassMat), 0.078, 0.10, 0, 1, 1, 1, 0, 0, Math.PI / 2, cup);
+
+        const bubbles = [
+          { x: 0.02, y: 0.08, z: 0.03, r: 0.007 }, { x: -0.03, y: 0.12, z: -0.02, r: 0.009 }, { x: 0.015, y: 0.16, z: -0.04, r: 0.006 },
+          { x: -0.02, y: 0.20, z: 0.02, r: 0.01 }, { x: 0.035, y: 0.23, z: 0.01, r: 0.007 }, { x: -0.015, y: 0.25, z: -0.02, r: 0.005 }
+        ];
+        bubbles.forEach(b => add(new THREE.Mesh(new THREE.SphereGeometry(b.r, 12, 12), bubbleMat), b.x, b.y, b.z, 1, 1, 1, 0, 0, 0, cup));
+
+        add(new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.16, 10), shineMat), -0.06, 0.185, 0.065, 1, 1, 1, 0.1, 0, -0.15, cup);
+        add(new THREE.Mesh(new THREE.SphereGeometry(0.011, 12, 12), shineMat), -0.055, 0.07, 0.058, 1, 0.4, 1, 0, 0, 0, cup);
+        add(new THREE.Mesh(new THREE.SphereGeometry(0.008, 12, 12), shineMat), 0.14, 0.21, 0.02, 1, 1, 1, 0, 0, 0, cup);
+      };
+
+      makeGlass(-0.12, 0);
+      makeGlass(0.12, 0);
+      break;
+    }
+    case 10: { // Small Bomb
+      const bm = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.7, metalness: 0.1 });
+      const fm = new THREE.MeshStandardMaterial({ color: 0xcc6600, roughness: 0.6, metalness: 0.0 });
+      const sg = new THREE.Group();
+
+      const body = new THREE.Mesh(new THREE.SphereGeometry(0.14, 14, 14), bm);
+      body.castShadow = true; sg.add(body);
+
+      const fuse = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.06, 6), fm);
+      fuse.position.set(0, 0.17, 0); fuse.castShadow = true; sg.add(fuse);
+
+      const spark = new THREE.Mesh(new THREE.SphereGeometry(0.015, 6, 6),
+        new THREE.MeshStandardMaterial({ color: 0xff4400, emissive: 0xff2200, emissiveIntensity: 0.5 }));
+      spark.position.set(0, 0.2, 0); spark.castShadow = true; sg.add(spark);
+
+      sg.scale.setScalar(1.1);
+      g.add(sg);
+      break;
+    }
+    case 11: { // Big Bomb
+      const bm2 = new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.7, metalness: 0.1 });
+      const fm2 = new THREE.MeshStandardMaterial({ color: 0xcc6600, roughness: 0.6, metalness: 0.0 });
+      const bg3 = new THREE.Group();
+
+      const body = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), bm2);
+      body.castShadow = true; bg3.add(body);
+
+      const fuse = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.08, 6), fm2);
+      fuse.position.set(0, 0.25, 0); fuse.castShadow = true; bg3.add(fuse);
+
+      const spark = new THREE.Mesh(new THREE.SphereGeometry(0.02, 6, 6),
+        new THREE.MeshStandardMaterial({ color: 0xff4400, emissive: 0xff2200, emissiveIntensity: 0.5 }));
+      spark.position.set(0, 0.29, 0); spark.castShadow = true; bg3.add(spark);
+
+      const band = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.025, 8, 14), new THREE.MeshStandardMaterial({ color: 0xcc0000, roughness: 0.5 }));
+      band.position.set(0, -0.05, 0); band.rotation.x = Math.PI/2; band.castShadow = true; bg3.add(band);
+
+      bg3.scale.setScalar(1.1);
+      g.add(bg3);
+      break;
+    }
+  }
+  return g;
+}
+
+function configureBody(body, radius) {
+  body.linearDamping = BALANCE.linearDamping;
+  body.angularDamping = BALANCE.angularDamping;
+  body.sleepSpeedLimit = 0.12;
+  body.sleepTimeLimit = 0.6;
+  body.addShape(new CANNON.Sphere(radius));
+}
+
+// ============================================================
+// GAME STATE — items now have { type, level } instead of { tier }
+// type = which item shape (0-7), level = size progression (0-7)
+// ============================================================
+let gameRunning = false;
+let score = 0;
+let queue = [];
+let activeItem = null;
+let allItems = [];
+let itemBodies = new Map();
+let currentGoal = null;
+let goalLevel = 0;
+let maxedCount = 0;
+let comboCount = 0;
+let lastMergeTime = 0;
+let frameCount = 0;
+let lastTime = 0;
+
+// ============================================================
+// QUEUE — always launches level-1 items of random type
+// ============================================================
+function randomType() {
+  const r = Math.random();
+  // Normal items 0-7 with decreasing probability
+  if (r < 0.18) return 0; // Golf Ball
+  if (r < 0.33) return 1; // Snorkel Mask
+  if (r < 0.46) return 2; // Snorkel Fins
+  if (r < 0.56) return 3; // Shrimp
+  if (r < 0.64) return 4; // Grouper Fish
+  if (r < 0.71) return 5; // Golf Cart
+  if (r < 0.77) return 6; // Palm Tree
+  if (r < 0.82) return 7; // Pink Flamingo
+  // Power-ups — rare
+  if (r < 0.86) return 8; // 1x Beer
+  if (r < 0.90) return 9; // 2x Beer
+  if (r < 0.95) return 10; // Small Bomb
+  return 11;               // Big Bomb
+}
+
+function fillQueue() { while (queue.length < MAX_QUEUE) queue.push(randomType()); updatePreview(); }
+function popQueue() { const t = queue.shift(); fillQueue(); return t; }
+
+// ============================================================
+// BOARD SEEDING — random types, all level 1
+// ============================================================
+function initBoard() {
+  const count = BALANCE.seedCountMin + Math.floor(Math.random() * (BALANCE.seedCountMax - BALANCE.seedCountMin + 1));
+  for (let i = 0; i < count; i++) {
+    const r = Math.random();
+    const type = r < 0.4 ? 0 : r < 0.7 ? 1 : r < 0.9 ? 2 : 3;
+    const level = 1; // all seeded items are level 1
+    const z = -3 + (i / count) * 4;
+    const x = (Math.random() - 0.5) * (TABLE_WIDTH - 1.4);
+    const radius = getLevelRadius(level);
+    const y = radius + Math.random() * 0.3;
+
+    const mesh = buildItemMesh(type);
+    const sf = getLevelRadius(level) / BASE_RADIUS;
+    mesh.scale.set(sf * (mesh.userData.visualScale||1), sf * (mesh.userData.visualScale||1), sf * (mesh.userData.visualScale||1));
+    mesh.position.set(x, y, z); scene.add(mesh);
+
+    const body = new CANNON.Body({ mass: 1, material: defaultMaterial });
+    body.position.set(x, y, z);
+    configureBody(body, radius);
+    world.addBody(body);
+
+    const item = { type, level, mesh, body, launched: true, _launchTime: Date.now(), _boardSeed: true };
+    itemBodies.set(body, { type, level, mesh });
+    allItems.push(item);
+  }
+}
+
+// ============================================================
+// LAUNCHER — always level 1, random type
+// ============================================================
+function createLauncherItem() {
+  if (!gameRunning || activeItem) return;
+  const type = popQueue();
+  const level = 1;
+  const mesh = buildItemMesh(type);
+  const radius = getLevelRadius(level);
+  const sf = getLevelRadius(level) / BASE_RADIUS;
+  mesh.scale.set(sf * (mesh.userData.visualScale||1), sf * (mesh.userData.visualScale||1), sf * (mesh.userData.visualScale||1));
+  mesh.position.set(0, radius, LAUNCHER_Z); scene.add(mesh);
+
+  const body = new CANNON.Body({ mass: 1, material: defaultMaterial });
+  body.position.set(0, radius, LAUNCHER_Z);
+  configureBody(body, radius);
+  world.addBody(body);
+
+  activeItem = { type, level, mesh, body, launched: false };
+  itemBodies.set(body, { type, level, mesh });
+  allItems.push(activeItem);
+
+  document.getElementById('launcher-name').textContent = ITEM_NAMES[type];
+  updateAimGuide();
+  updatePreview();
+}
+
+function launchItem() {
+  if (!activeItem || activeItem.launched) return;
+  activeItem.launched = true;
+  activeItem._launchTime = performance.now();
+
+  const body = activeItem.body;
+  body.velocity.set(0, 0, 0);
+  body.angularVelocity.set(0, 0, 0);
+  const aimNorm = body.position.x / (halfW - 0.6);
+  const sideImpulse = aimNorm * BALANCE.sideImpulseMax;
+  body.applyImpulse(new CANNON.Vec3(sideImpulse, BALANCE.launchYImpulse, BALANCE.launchZImpulse), body.position);
+
+  playSound('launch');
+  activeItem = null;
+  document.getElementById('launcher-name').textContent = '';
+  trajLine.visible = false;
+
+  setTimeout(() => { if (gameRunning) createLauncherItem(); }, 350);
+}
+
+// ============================================================
+// AIM GUIDE
+// ============================================================
+function isPortrait() { return window.innerWidth / window.innerHeight < 0.85; }
+
+function updateAimGuide() {
+  if (!activeItem || activeItem.launched) { trajLine.visible = false; return; }
+  trajLine.visible = true;
+  const x = activeItem.body.position.x;
+  if (isPortrait()) {
+    const pos = trajLine.geometry.attributes.position.array;
+    pos[0] = x; pos[1] = 0.08; pos[2] = LAUNCHER_Z - 0.2;
+    pos[3] = x; pos[4] = 0.08; pos[5] = -3.5;
+    trajLine.geometry.attributes.position.needsUpdate = true;
+    trajLine.geometry.setDrawRange(0, 2);
+  } else {
+    const y0 = activeItem.body.position.y, z0 = activeItem.body.position.z;
+    const g = BALANCE.gravityY, vz = BALANCE.launchZImpulse, vy0 = BALANCE.launchYImpulse, dt = 0.04;
+    let sz = z0, sy = y0, svy = vy0, count = 0;
+    const pos = trajLine.geometry.attributes.position.array;
+    for (let i = 0; i < TRAJ_POINTS; i++) {
+      sz += vz * dt; svy += g * dt; sy += svy * dt;
+      if (sy <= getLevelRadius(activeItem.level)) { pos[i*3]=x; pos[i*3+1]=getLevelRadius(activeItem.level); pos[i*3+2]=sz; count=i+1; break; }
+      pos[i*3]=x; pos[i*3+1]=Math.max(sy,0.01); pos[i*3+2]=sz; count=i+1;
+    }
+    if (count < 2) { pos[0]=x;pos[1]=0.3;pos[2]=z0; pos[3]=x;pos[4]=0.3;pos[5]=z0-2; count=2; }
+    trajLine.geometry.attributes.position.needsUpdate = true;
+    trajLine.geometry.setDrawRange(0, count);
+  }
+  trajLine.computeLineDistances();
+}
+
+// ============================================================
+// MERGE SYSTEM — same TYPE, any LEVEL → larger same TYPE
+// ============================================================
+function checkMerge(collision) {
+  const b1 = collision.bi, b2 = collision.bj;
+  const d1 = itemBodies.get(b1), d2 = itemBodies.get(b2);
+  if (!d1 || !d2 || d1.type !== d2.type || d1.type >= 8) return;
+  // Allow merging at any level including max (beyond max = disappearance)
+
+  const mid = new THREE.Vector3(
+    (d1.mesh.position.x + d2.mesh.position.x) / 2,
+    Math.max((d1.mesh.position.y + d2.mesh.position.y) / 2, 0.2),
+    (d1.mesh.position.z + d2.mesh.position.z) / 2
+  );
+  const newLevel = Math.max(d1.level, d2.level) + 1;
+  const newType = d1.type;
+
+  removeItem(b1); removeItem(b2);
+  spawnMergedItem(newType, newLevel, mid);
+
+  registerMergeScore(newLevel, mid);
+  spawnMergeParticles(mid, ITEM_COLORS[newType]);
+  showMergeFlash(newType);
+  playSound('merge');
+  checkGoal();
+}
+
+function removeItem(body) {
+  removeBadge(body);
+  const data = itemBodies.get(body);
+  if (!data) return;
+  scene.remove(data.mesh);
+  world.removeBody(body);
+  itemBodies.delete(body);
+  allItems = allItems.filter(item => item.body !== body);
+  if (activeItem && activeItem.body === body) activeItem = null;
+}
+
+function spawnMergedItem(type, level, position) {
+  // Level beyond max = animate disappearance instead of spawning
+  if (level > MAX_LEVEL) {
+    showMergeFlash(type);
+    spawnMergeParticles(position, ITEM_COLORS[type]);
+    const bonus = (MAX_LEVEL+1)*SCORE_PER_LEVEL;
+    createScorePopup(position, `+${bonus} MAX!`);
+    score += bonus;
+    maxedCount++;
+    updateScore();
+    checkGoal();
+    return;
+  }
+  const mesh = buildItemMesh(type);
+  const radius = getLevelRadius(level);
+  const sf = getLevelRadius(level) / BASE_RADIUS;
+  const vs = mesh.userData.visualScale||1;
+  mesh.scale.set(sf * vs, sf * vs, sf * vs);
+  mesh.position.copy(position); mesh.position.y = Math.max(position.y, radius + 0.1); scene.add(mesh);
+  mesh.scale.set(sf * vs * 0.01, sf * vs * 0.01, sf * vs * 0.01);
+  const st = performance.now();
+  (function popAnim() { const t = Math.min((performance.now()-st)/300,1); const s = vs * sf * (0.01+0.99*(1-Math.pow(1-t,3))); mesh.scale.set(s,s,s); if (t<1) requestAnimationFrame(popAnim); })();
+
+  const body = new CANNON.Body({ mass: 1, material: defaultMaterial });
+  body.position.copy(position); body.position.y = Math.max(position.y, radius + 0.1);
+  configureBody(body, radius);
+  world.addBody(body);
+
+  // _firstHit set so badge shows immediately — merge check only uses thrown item's flag
+  const item = { type, level, mesh, body, launched: true, _firstHit: true, _launchTime: performance.now() };
+  itemBodies.set(body, { type, level, mesh });
+  allItems.push(item);
+}
+
+function showMergeFlash(type) {
+  const flash = document.getElementById('merge-flash');
+  flash.style.background = `radial-gradient(circle at center, ${ITEM_COLORS[type]||'#fff'} 0%, transparent 70%)`;
+  flash.classList.add('active');
+  setTimeout(() => flash.classList.remove('active'), 200);
+}
+
+// ============================================================
+// SCORE POPUPS
+// ============================================================
+const scorePopups = [];
+function createScorePopup(worldPos, text) {
+  const div = document.createElement('div');
+  div.className = 'score-popup'; div.textContent = text;
+  document.body.appendChild(div);
+  scorePopups.push({ element: div, worldPos: worldPos.clone(), start: performance.now(), duration: 900 });
+}
+function updateScorePopups() {
+  const now = performance.now();
+  for (let i = scorePopups.length - 1; i >= 0; i--) {
+    const p = scorePopups[i];
+    const t = (now - p.start) / p.duration;
+    if (t >= 1) { p.element.remove(); scorePopups.splice(i, 1); continue; }
+    const pos = p.worldPos.clone(); pos.y += 1.0 + t * 1.2;
+    const vec = pos.clone().project(camera);
+    p.element.style.left = `${(vec.x*0.5+0.5)*window.innerWidth}px`;
+    p.element.style.top = `${(-vec.y*0.5+0.5)*window.innerHeight}px`;
+    p.element.style.opacity = `${1-t}`;
+    p.element.style.transform = `translate(-50%,-50%) scale(${1+t*0.25})`;
+  }
+}
+
+// ============================================================
+// PARTICLES
+// ============================================================
+const particles = [];
+function spawnMergeParticles(position, color = 0xffcc66) {
+  for (let i = 0; i < 18; i++) {
+    const geo = new THREE.SphereGeometry(0.035, 6, 6);
+    const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 1 });
+    const m = new THREE.Mesh(geo, mat);
+    m.position.copy(position); scene.add(m);
+    particles.push({ mesh: m, velocity: new THREE.Vector3((Math.random()-0.5)*2.5, Math.random()*2.2+0.6, (Math.random()-0.5)*2.5), start: performance.now(), duration: 550 });
+  }
+}
+function updateParticles(dt) {
+  const now = performance.now();
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    const t = (now - p.start) / p.duration;
+    if (t >= 1) { scene.remove(p.mesh); p.mesh.geometry.dispose(); p.mesh.material.dispose(); particles.splice(i, 1); continue; }
+    p.velocity.y -= 5.5 * dt;
+    p.mesh.position.addScaledVector(p.velocity, dt);
+    p.mesh.material.opacity = 1 - t;
+    p.mesh.scale.setScalar(1 - t * 0.5);
+  }
+}
+
+// ============================================================
+// COMBO
+// ============================================================
+function registerMergeScore(level, worldPos) {
+  const now = performance.now();
+  if (now - lastMergeTime <= BALANCE.comboWindowMs) comboCount++;
+  else comboCount = 1;
+  lastMergeTime = now;
+  const base = (level + 1) * SCORE_PER_LEVEL;
+  const comboBonus = comboCount >= 2 ? (comboCount - 1) * 50 : 0;
+  const gained = base + comboBonus;
+  score += gained;
+  createScorePopup(worldPos, comboCount >= 2 ? `+${gained} Combo x${comboCount}` : `+${gained}`);
+  const el = document.getElementById('combo');
+  if (comboCount >= 2) { el.textContent = `COMBO x${comboCount}`; el.classList.add('show'); }
+  else el.classList.remove('show');
+  updateScore();
+}
+
+// ============================================================
+// LEVEL BADGES — show level number above each item
+// ============================================================
+const itemBadges = new Map();
+function getOrCreateBadge(item) {
+  let el = itemBadges.get(item.body);
+  if (!el) {
+    el = document.createElement('div');
+    el.className = 'level-badge';
+    document.body.appendChild(el);
+    itemBadges.set(item.body, el);
+  }
+  el.textContent = item.level + 1;
+  return el;
+}
+function removeBadge(body) {
+  const el = itemBadges.get(body);
+  if (el) { el.remove(); itemBadges.delete(body); }
+}
+function updateLevelBadges() {
+  for (const item of allItems) {
+    if (item === activeItem) continue;
+    if (item.type >= 8) continue; // power-ups have no level badge
+    // Hide badge on items still in flight (moving fast, haven't hit anything)
+    if (item.launched && !item._firstHit && !item._boardSeed) {
+      const spd = item.body.velocity.length();
+      if (spd > 0.3) continue;
+    }
+    const el = getOrCreateBadge(item);
+    const pos = item.mesh.position.clone();
+    pos.y += getLevelRadius(item.level) + 0.3;
+    const vec = pos.clone().project(camera);
+    el.style.left = `${(vec.x*0.5+0.5)*window.innerWidth}px`;
+    el.style.top = `${(-vec.y*0.5+0.5)*window.innerHeight}px`;
+    el.style.display = 'flex';
+  }
+}
+
+// ============================================================
+// POWER-UP HANDLERS — beer grow, bomb explode
+// ============================================================
+const powerUpAnims = [];
+
+function handleBeerHit(beerItem, targetItem) {
+  if (!beerItem || !targetItem) return;
+  // Track which bodies this beer has already affected (prevents re-trigger)
+  if (!beerItem._beerHitBodies) beerItem._beerHitBodies = new Set();
+  if (beerItem._beerHitBodies.has(targetItem.body)) return;
+  beerItem._beerHitBodies.add(targetItem.body);
+
+  const isDouble = beerItem.type === 9; // 2x Beer
+  const mid = targetItem.mesh.position.clone();
+
+  // Spawn a glow flash
+  spawnMergeParticles(mid, 0xffcc33);
+  playSound('merge');
+
+  // Animate the target: scale up to level-10 size then vanish
+  const startScale = targetItem.mesh.scale.clone();
+  const endRadius = getLevelRadius(MAX_LEVEL);
+  const endSf = endRadius / BASE_RADIUS;
+  const growDuration = 400;
+  const shrinkDuration = 250;
+  const animStart = performance.now();
+  const targetBody = targetItem.body;
+  const targetMesh = targetItem.mesh;
+
+  powerUpAnims.push({
+    update: function(now) {
+      const elapsed = now - animStart;
+      if (elapsed < growDuration) {
+        const t = elapsed / growDuration;
+        const ease = 1 - Math.pow(1 - t, 3);
+        const sf = startScale.x + (endSf - startScale.x) * ease;
+        targetMesh.scale.set(sf, sf, sf);
+        return true;
+      } else if (elapsed < growDuration + shrinkDuration) {
+        const t = (elapsed - growDuration) / shrinkDuration;
+        const sf = endSf * (1 - t);
+        targetMesh.scale.set(sf, sf, sf);
+        return true;
+      } else {
+        removeItem(targetBody);
+        spawnMergeParticles(mid, 0xffcc33);
+        createScorePopup(mid, `+${(MAX_LEVEL+1)*SCORE_PER_LEVEL} MAX!`);
+        score += (MAX_LEVEL+1)*SCORE_PER_LEVEL;
+        maxedCount++;
+        updateScore();
+        checkGoal();
+        playSound('goal');
+        return false;
+      }
+    }
+  });
+
+  // Remove beer if 1x; for 2x let it continue if it hasn't hit 2 yet
+  const hitCount = beerItem._beerHitBodies.size;
+  if (!isDouble || hitCount >= 2) {
+    removeItem(beerItem.body);
+  } else {
+    // 2x beer — push behind the target and boost it forward for a second hit
+    beerItem._firstHit = false;
+    beerItem.body.position.z = targetItem.body.position.z + 0.4;
+    beerItem.body.position.x = targetItem.body.position.x + (Math.random() - 0.5) * 0.3;
+    beerItem.body.velocity.set(0, 2, -15);
+    beerItem.body.angularVelocity.set(0, 0, 0);
+    // Wake up the body
+    beerItem.body.wakeUp();
+  }
+}
+
+function handleBombHit(bombItem, collisionPoint, explosionRadius) {
+  if (!bombItem) return;
+  const mid = collisionPoint || bombItem.mesh.position.clone();
+
+  // Explosion ring effect — expanding circle showing blast radius
+  const ringPoints = [];
+  const ringSegments = 40;
+  for (let i = 0; i <= ringSegments; i++) {
+    const a = (i / ringSegments) * Math.PI * 2;
+    ringPoints.push(new THREE.Vector3(Math.cos(a), 0, Math.sin(a)));
+  }
+  const ringGeo = new THREE.BufferGeometry().setFromPoints(ringPoints);
+  const ringMat = new THREE.LineBasicMaterial({ color: 0xff6600, transparent: true, opacity: 0.9 });
+  const ringLine = new THREE.Line(ringGeo, ringMat);
+  ringLine.position.copy(mid);
+  ringLine.position.y = 0.1;
+  ringLine.scale.set(0.01, 0.01, 0.01);
+  scene.add(ringLine);
+
+  const ringStart = performance.now();
+  const ringDuration = 450;
+  const targetScale = explosionRadius;
+  powerUpAnims.push({
+    update: function(now) {
+      const t = Math.min((now - ringStart) / ringDuration, 1);
+      const ease = 1 - Math.pow(1 - t, 2);
+      const s = targetScale * ease;
+      ringLine.scale.set(s, s, s);
+      ringMat.opacity = 1 - t;
+      if (t >= 1) {
+        scene.remove(ringLine);
+        ringGeo.dispose();
+        ringMat.dispose();
+        return false;
+      }
+      return true;
+    }
+  });
+
+  // Big explosion particle flash
+  spawnMergeParticles(mid, 0xff4400);
+  spawnMergeParticles(mid, 0xffcc00);
+
+  // Flash the screen
+  const flash = document.getElementById('merge-flash');
+  flash.style.background = 'radial-gradient(circle at center, #ff6600 0%, #ff0000 40%, transparent 70%)';
+  flash.classList.add('active');
+  setTimeout(() => flash.classList.remove('active'), 300);
+
+  playSound('gameover');
+
+  // Find all items within blast radius
+  const destroyed = [];
+  for (const item of allItems) {
+    if (item === bombItem || item === activeItem) continue;
+    const dx = item.body.position.x - mid.x;
+    const dy = item.body.position.y - mid.y;
+    const dz = item.body.position.z - mid.z;
+    const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+    if (dist <= explosionRadius) {
+      destroyed.push(item);
+    }
+  }
+
+  // Remove bomb
+  removeItem(bombItem.body);
+
+  // Animate destroyed items — grow to max then vanish (like beer)
+  let boomIdx = 0;
+  const boomInterval = 120;
+  const boomStart = performance.now();
+  powerUpAnims.push({
+    update: function(now) {
+      const elapsed = now - boomStart;
+      const idx = Math.floor(elapsed / boomInterval);
+      while (boomIdx <= idx && boomIdx < destroyed.length) {
+        const item = destroyed[boomIdx];
+        if (itemBodies.has(item.body)) {
+          const pos = item.mesh.position.clone();
+          const bonus = (item.level + 1) * SCORE_PER_LEVEL;
+          createScorePopup(pos, `+${bonus} 💥`);
+          score += bonus;
+          // Animate grow-to-10 then vanish
+          const startScale = item.mesh.scale.clone();
+          const endRadius2 = getLevelRadius(MAX_LEVEL);
+          const endSf2 = endRadius2 / BASE_RADIUS;
+          const gDur = 300, sDur = 200;
+          const aStart = performance.now();
+          const tBody = item.body;
+          const tMesh = item.mesh;
+          powerUpAnims.push({
+            update: function(now2) {
+              const el = now2 - aStart;
+              if (el < gDur) {
+                const t = el / gDur;
+                const ease = 1 - Math.pow(1 - t, 3);
+                const sf = startScale.x + (endSf2 - startScale.x) * ease;
+                tMesh.scale.set(sf, sf, sf);
+                return true;
+              } else if (el < gDur + sDur) {
+                const t = (el - gDur) / sDur;
+                tMesh.scale.set(endSf2 * (1 - t), endSf2 * (1 - t), endSf2 * (1 - t));
+                return true;
+              } else {
+                removeItem(tBody);
+                spawnMergeParticles(pos, 0xff4400);
+                maxedCount++;
+                return false;
+              }
+            }
+          });
+        }
+        boomIdx++;
+      }
+      if (destroyed.length > 0 && boomIdx >= destroyed.length) {
+        updateScore();
+        checkGoal();
+      }
+      return boomIdx < destroyed.length;
+    }
+  });
+}
+
+// Power-up animation loop (called in main animate)
+function updatePowerUpAnims() {
+  const now = performance.now();
+  for (let i = powerUpAnims.length - 1; i >= 0; i--) {
+    const keep = powerUpAnims[i].update(now);
+    if (!keep) powerUpAnims.splice(i, 1);
+  }
+}
+// ============================================================
+// SETTLE FEEDBACK
+// ============================================================
+function updateSettleFeedback() {
+  const now = performance.now();
+  for (const item of allItems) {
+    if (item._boardSeed || item._settled || !item.launched) continue;
+    const v = item.body.velocity.length();
+    const age = now - (item._launchTime || 0);
+    if (age > BALANCE.settleAgeMs && v < BALANCE.settleSpeed) {
+      item._settled = true;
+      const os = item.mesh.scale.clone();
+      const st = performance.now();
+      (function pulse() { const t = Math.min((performance.now()-st)/350,1); item.mesh.scale.copy(os).multiplyScalar(1+Math.sin(t*Math.PI)*0.12); if(t<1)requestAnimationFrame(pulse); else item.mesh.scale.copy(os); })();
+      playSound('settle');
+    }
+  }
+}
+
+// ============================================================
+// PROXIMITY MERGE CHECK — same type, any level → merge
+// ============================================================
+const MERGE_PROX = 1.15;
+
+function checkProximityMerges() {
+  if (!gameRunning) return;
+  for (let i = 0; i < allItems.length; i++) {
+    for (let j = i + 1; j < allItems.length; j++) {
+      const a = allItems[i], b = allItems[j];
+      if (a.type !== b.type && a.type < 8 && b.type < 8) continue;
+      const speedA = a.body.velocity.length(), speedB = b.body.velocity.length();
+      if (speedA < 0.08 && speedB < 0.08) continue;
+      // Determine which item is the thrown one (higher velocity)
+      const thrown = speedA >= speedB ? a : b;
+      const boardItem = speedA >= speedB ? b : a;
+      // One-shot rule: only the thrown item gets marked — board items stay mergeable
+      if (thrown._firstHit) continue;
+      const dx = a.body.position.x - b.body.position.x;
+      const dy = a.body.position.y - b.body.position.y;
+      const dz = a.body.position.z - b.body.position.z;
+      const dist = Math.sqrt(dx*dx+dy*dy+dz*dz);
+      const limit = (getLevelRadius(a.level) + getLevelRadius(b.level)) * MERGE_PROX;
+      if (dist <= limit) {
+        thrown._firstHit = true; // only mark the thrown item
+
+        // POWER-UP: beer/bomb hit any item regardless of type
+        if (thrown.type >= 8) {
+          if (thrown.type === 8 || thrown.type === 9) {
+            // Beer — grow the hit item to max and vanish
+            handleBeerHit(thrown, boardItem);
+          } else {
+            // Bomb — blow up items in radius
+            const radius = (thrown.type === 10) ? 1.5 : 3.0;
+            const mid = new THREE.Vector3(
+              (a.body.position.x + b.body.position.x) / 2,
+              Math.max((a.body.position.y + b.body.position.y) / 2, 0.2),
+              (a.body.position.z + b.body.position.z) / 2
+            );
+            handleBombHit(thrown, mid, radius);
+          }
+          return;
+        }
+
+        if (itemBodies.has(a.body) && itemBodies.has(b.body) && a.type === b.type) {
+          checkMerge({ bi: a.body, bj: b.body });
+        }
+        return;
+      }
+    }
+  }
+}
+
+// ============================================================
+// DEADLINE
+// ============================================================
+function checkDeadline() {
+  if (!gameRunning) return;
+  const now = performance.now();
+  let worst = 0;
+  for (const item of allItems) {
+    if (!item.launched || item._boardSeed) continue;
+    if (item._launchTime && now - item._launchTime < BALANCE.launchGraceMs) continue;
+    const pz = item.body.position.z, speed = item.body.velocity.length();
+    if (speed < 0.15 && pz > DEADLINE_Z && pz < LAUNCHER_Z + 0.5) {
+      item._deadlineEntry = item._deadlineEntry || now;
+      const elapsed = (now - item._deadlineEntry) / 1000;
+      worst = Math.max(worst, Math.min(1, elapsed / BALANCE.deadlineSeconds));
+      if (elapsed >= BALANCE.deadlineSeconds) { endGame(); return; }
+    } else item._deadlineEntry = null;
+  }
+  if (worst <= 0) { deadlineMat.color.set(0xff3333); deadlineMat.opacity = 0.75; }
+  else {
+    const pulse = 0.5 + Math.sin(now * 0.02) * 0.5;
+    deadlineMat.color.set(worst > 0.65 ? 0xff0000 : 0xffaa00);
+    deadlineMat.opacity = 0.75 + pulse * 0.25;
+  }
+}
+
+// ============================================================
+// SOUND — procedural Web Audio API (no external files)
+// ============================================================
+let audioCtx = null;
+let soundsInitialized = false;
+
+function initAudio() {
+  if (soundsInitialized) return;
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    soundsInitialized = true;
+  } catch(e) { console.warn('Audio not available', e); }
+}
+
+function resumeAudio() {
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playTone(freq, duration, type = 'sine', volume = 0.3) {
+  if (!audioCtx) return;
+  resumeAudio();
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+  gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+  osc.connect(gain).connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + duration);
+}
+
+function playNoise(duration, volume = 0.15) {
+  if (!audioCtx) return;
+  resumeAudio();
+  const bufferSize = audioCtx.sampleRate * duration;
+  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+  const src = audioCtx.createBufferSource();
+  src.buffer = buffer;
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+  src.connect(gain).connect(audioCtx.destination);
+  src.start();
+}
+
+function playSound(name) {
+  // Initialize audio on first sound (requires user gesture)
+  if (!soundsInitialized && name !== 'init') return;
+  initAudio();
+  if (!audioCtx) return;
+
+  switch(name) {
+    case 'launch':
+      playTone(180, 0.08, 'sine', 0.25);
+      setTimeout(() => playTone(120, 0.12, 'sawtooth', 0.15), 30);
+      break;
+    case 'merge':
+      playTone(520, 0.06, 'sine', 0.2);
+      setTimeout(() => playTone(680, 0.08, 'sine', 0.18), 50);
+      setTimeout(() => playTone(860, 0.1, 'sine', 0.15), 100);
+      playNoise(0.05, 0.08);
+      break;
+    case 'settle':
+      playTone(200, 0.06, 'sine', 0.12);
+      playNoise(0.04, 0.05);
+      break;
+    case 'goal':
+      [520, 650, 780, 1040].forEach((f, i) => {
+        setTimeout(() => playTone(f, 0.15, 'sine', 0.25), i * 120);
+      });
+      break;
+    case 'gameover':
+      [400, 350, 300, 200].forEach((f, i) => {
+        setTimeout(() => playTone(f, 0.2, 'sawtooth', 0.2), i * 150);
+      });
+      break;
+  }
+}
+
+// ============================================================
+// GOALS
+// ============================================================
+const GOALS = [
+  { type: 'maxed', target: 1, desc: 'Max out 1 item (merge to 11)' },
+  { type: 'maxed', target: 2, desc: 'Max out 2 items' },
+  { type: 'maxed', target: 3, desc: 'Max out 3 items 🏆' },
+];
+
+function generateGoal() {
+  goalLevel = Math.min(goalLevel, GOALS.length - 1);
+  currentGoal = GOALS[goalLevel];
+  updateGoalUI();
+}
+
+function updateGoalUI() {
+  const text = document.getElementById('goal-text');
+  const fill = document.getElementById('goal-fill');
+  const box = document.getElementById('goal-box');
+  if (!currentGoal) { text.textContent = '🏆 All Goals Complete!'; fill.style.width = '100%'; return; }
+  text.textContent = currentGoal.desc;
+  box.classList.remove('completed');
+  let progress = 0;
+  if (currentGoal.type === 'score') {
+    progress = Math.min(score / currentGoal.target, 1);
+  } else if (currentGoal.type === 'maxed') {
+    progress = Math.min(maxedCount / currentGoal.target, 1);
+  }
+  fill.style.width = (progress * 100) + '%';
+  if (progress >= 1) box.classList.add('completed');
+}
+
+function checkGoal() {
+  if (!currentGoal) return;
+  let achieved = false;
+  if (currentGoal.type === 'score') {
+    achieved = score >= currentGoal.target;
+  } else if (currentGoal.type === 'maxed') {
+    achieved = maxedCount >= currentGoal.target;
+  }
+  if (achieved) {
+    playSound('goal');
+    showVictory();
+  }
+  updateGoalUI();
+}
+
+function showVictory() {
+  gameRunning = false;
+  document.getElementById('victory-score').textContent = score.toLocaleString();
+  document.getElementById('victory-desc').textContent = currentGoal ? currentGoal.desc : 'All Goals Complete!';
+  document.getElementById('victory').classList.add('active');
+}
+
+function nextGoal() {
+  document.getElementById('victory').classList.remove('active');
+  goalLevel++;
+  if (goalLevel >= GOALS.length) {
+    currentGoal = null;
+    document.getElementById('goal-text').textContent = '🏆 All Goals Complete!';
+    document.getElementById('goal-fill').style.width = '100%';
+    gameRunning = true;
+    if (!activeItem) createLauncherItem();
+    return;
+  }
+  generateGoal();
+  gameRunning = true;
+  if (!activeItem) createLauncherItem();
+}
+
+// ============================================================
+// UI
+// ============================================================
+function updateScore() {
+  document.getElementById('score-val').textContent = score.toLocaleString();
+  updateGoalUI();
+}
+
+function updatePreview() {
+  const preview = document.getElementById('next-preview');
+  const nameEl = document.getElementById('next-name');
+  preview.innerHTML = '';
+  if (queue.length === 0) { nameEl.textContent = ''; return; }
+  const type = queue[0];
+  nameEl.textContent = ITEM_NAMES[type];
+  const canvas = document.createElement('canvas');
+  canvas.width = 120; canvas.height = 120; preview.appendChild(canvas);
+  const r2 = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  r2.setSize(120, 120); r2.setPixelRatio(1);
+  const s2 = new THREE.Scene();
+  const c2 = new THREE.PerspectiveCamera(35, 1, 0.1, 10);
+  c2.position.set(1.2, 0.8, 1.8); c2.lookAt(0, 0, 0);
+  s2.add(new THREE.DirectionalLight(0xffffff, 1)); s2.add(new THREE.AmbientLight(0x404060, 0.5));
+  s2.add(buildItemMesh(type));
+  r2.render(s2, c2); r2.dispose();
+}
+
+// ============================================================
+// GAME OVER / RESTART
+// ============================================================
+function endGame() {
+  gameRunning = false;
+  playSound('gameover');
+  document.getElementById('final-score').textContent = score.toLocaleString();
+  document.getElementById('gameover').classList.add('active');
+}
+
+function restartGame() {
+  const bodies = [...itemBodies.keys()];
+  bodies.forEach(body => { const d = itemBodies.get(body); if (d) scene.remove(d.mesh); world.removeBody(body); });
+  itemBodies.clear(); allItems = []; activeItem = null; queue = [];
+  trajLine.visible = false;
+  goalLevel = 0; maxedCount = 0; comboCount = 0; lastMergeTime = 0; score = 0;
+  document.querySelectorAll('.score-popup').forEach(el => el.remove());
+  scorePopups.length = 0;
+  particles.forEach(p => { scene.remove(p.mesh); p.mesh.geometry.dispose(); p.mesh.material.dispose(); });
+  particles.length = 0;
+  itemBadges.forEach(el => el.remove());
+  itemBadges.clear();
+  document.getElementById('combo').classList.remove('show');
+  updateScore();
+  document.getElementById('gameover').classList.remove('active');
+  document.getElementById('victory').classList.remove('active');
+  gameRunning = true;
+  initBoard();
+  fillQueue();
+  generateGoal();
+  setTimeout(() => { if (gameRunning) createLauncherItem(); }, 500);
+}
+
+// ============================================================
+// INPUT
+// ============================================================
+let isDragging = false, dragStartX = 0, dragStartItemX = 0;
+function getPX(e) { return e.touches ? e.touches[0].clientX : e.clientX; }
+function onPointerDown(e) {
+  initAudio(); resumeAudio();
+  if (!gameRunning || !activeItem || activeItem.launched) return;
+  isDragging = true; dragStartX = getPX(e); dragStartItemX = activeItem.body.position.x;
+}
+function onPointerMove(e) {
+  if (!isDragging || !activeItem || activeItem.launched) return;
+  e.preventDefault();
+  const px = getPX(e), rect = renderer.domElement.getBoundingClientRect();
+  const dx = ((px - dragStartX) / rect.width) * (TABLE_WIDTH - 0.8);
+  let newX = Math.max(-halfW + 0.6, Math.min(halfW - 0.6, dragStartItemX + dx));
+  activeItem.body.position.x = newX; activeItem.mesh.position.x = newX;
+  updateAimGuide();
+}
+function onPointerUp(e) {
+  if (!isDragging) return;
+  isDragging = false;
+  if (activeItem && !activeItem.launched) launchItem();
+}
+renderer.domElement.addEventListener('mousedown', onPointerDown);
+renderer.domElement.addEventListener('mousemove', onPointerMove);
+renderer.domElement.addEventListener('mouseup', onPointerUp);
+renderer.domElement.addEventListener('mouseleave', () => { if (isDragging) onPointerUp(); });
+renderer.domElement.addEventListener('touchstart', e => { e.preventDefault(); onPointerDown(e); }, { passive: false });
+renderer.domElement.addEventListener('touchmove', e => { e.preventDefault(); onPointerMove(e); }, { passive: false });
+renderer.domElement.addEventListener('touchend', e => { e.preventDefault(); onPointerUp(e); }, { passive: false });
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space' && gameRunning && activeItem && !activeItem.launched) { e.preventDefault(); launchItem(); }
+});
+
+// ============================================================
+// CAMERA
+// ============================================================
+function updateCameraForViewport() {
+  const aspect = window.innerWidth / window.innerHeight;
+  if (aspect < 0.85) { camera.position.set(0, 12, 10); camera.lookAt(0, 0, 0.5); camera.fov = 48; }
+  else { camera.position.set(0, 10, 8); camera.lookAt(0, 0, 0.5); camera.fov = 50; }
+  camera.aspect = aspect; camera.updateProjectionMatrix();
+}
+
+function onResize() { updateCameraForViewport(); renderer.setSize(window.innerWidth, window.innerHeight); }
+window.addEventListener('resize', onResize);
+
+// ============================================================
+// MAIN LOOP
+// ============================================================
+function animate() {
+  requestAnimationFrame(animate);
+  const now = performance.now();
+  if (!lastTime) lastTime = now;
+  const dt = Math.min((now - lastTime) / 1000, 0.033);
+  lastTime = now;
+
+  world.step(1/60, dt, 3);
+
+  for (const [body, data] of itemBodies) {
+    data.mesh.position.copy(body.position);
+    const siny = 2 * (body.quaternion.w * body.quaternion.y + body.quaternion.x * body.quaternion.z);
+    const cosy = 1 - 2 * (body.quaternion.y * body.quaternion.y + body.quaternion.z * body.quaternion.z);
+    data.mesh.rotation.set(0, Math.atan2(siny, cosy), 0);
+  }
+  if (activeItem && !activeItem.launched) {
+    activeItem.mesh.position.copy(activeItem.body.position);
+    const be = activeItem.body.quaternion;
+    const siny = 2 * (be.w * be.y + be.x * be.z);
+    const cosy = 1 - 2 * (be.y * be.y + be.z * be.z);
+    activeItem.mesh.rotation.set(0, Math.atan2(siny, cosy), 0);
+  }
+
+  updateScorePopups();
+  updateParticles(dt);
+  updateLevelBadges();
+  updatePowerUpAnims();
+  checkDeadline();
+  updateAimGuide();
+  checkProximityMerges();
+  updateSettleFeedback();
+
+  for (const item of allItems) {
+    if (item.launched && !item._boardSeed && item !== activeItem) {
+      item.body.velocity.z += BALANCE.gravityZ * dt * 0.5;
+    }
+  }
+
+  renderer.render(scene, camera);
+  frameCount++;
+}
+
+// ============================================================
+// ADMIN PANEL
+// ============================================================
+let adminMode = false;
+let adminForcedType = -1; // -1 = random queue
+
+document.getElementById('admin-lock').addEventListener('click', () => {
+  if (adminMode) {
+    adminMode = false;
+    adminForcedType = -1;
+    document.getElementById('admin-panel').classList.remove('active');
+    document.getElementById('admin-lock').textContent = '🔒';
+    document.querySelectorAll('#admin-panel button').forEach(b => b.classList.remove('sel'));
+    return;
+  }
+  const code = prompt('Enter admin passcode:');
+  if (code === '5545') {
+    adminMode = true;
+    document.getElementById('admin-panel').classList.add('active');
+    document.getElementById('admin-lock').textContent = '🔓';
+  }
+});
+
+// Normal random button — clears forced type
+document.getElementById('admin-random').addEventListener('click', () => {
+  adminForcedType = -1;
+  document.querySelectorAll('#admin-panel button').forEach(b => b.classList.remove('sel'));
+  fillQueue();
+  updatePreview();
+  document.getElementById('launcher-name').textContent = '';
+});
+
+document.querySelectorAll('#admin-panel button[data-type]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const type = parseInt(btn.dataset.type);
+    adminForcedType = type;
+    document.querySelectorAll('#admin-panel button').forEach(b => b.classList.remove('sel'));
+    btn.classList.add('sel');
+    // Force the next queue item to be this type
+    if (queue.length > 0) queue[0] = type;
+    else queue.push(type);
+    updatePreview();
+    document.getElementById('launcher-name').textContent = ITEM_NAMES[type];
+  });
+});
+
+// Override popQueue when admin forced type is set
+const origPopQueue = popQueue;
+popQueue = function() {
+  if (adminForcedType >= 0) { return adminForcedType; }
+  return origPopQueue();
+};
+// ============================================================
+document.getElementById('restart-btn').addEventListener('click', restartGame);
+document.getElementById('victory-next-btn').addEventListener('click', nextGoal);
+
+updateCameraForViewport();
+gameRunning = true;
+initBoard();
+fillQueue();
+generateGoal();
+updateScore();
+setTimeout(() => { if (gameRunning) createLauncherItem(); }, 500);
+animate();
+
+})();
+</script>
+</body>
+</html>
