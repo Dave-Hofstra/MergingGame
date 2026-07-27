@@ -27,25 +27,9 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a0a2e;font-family:
 /* Score */
 #score{position:absolute;top:12px;left:50%;transform:translateX(-50%);color:#fff;font-size:clamp(22px,4vw,38px);font-weight:700;text-shadow:0 2px 12px rgba(0,0,0,.7),0 0 30px rgba(255,200,50,.2);letter-spacing:1px;background:rgba(0,0,0,.5);padding:4px 18px;border-radius:10px;border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(4px)}
 #score span{color:#f0c040}
-/* Goal Card */
-#goal-box{position:absolute;top:12px;left:12px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:6px 12px;backdrop-filter:blur(4px);text-align:center;max-width:160px}
-#goal-box .g-label{color:rgba(255,255,255,.4);font-size:clamp(8px,1.2vw,10px);text-transform:uppercase;letter-spacing:1px}
-#goal-box .g-text{color:#f0c040;font-size:clamp(11px,1.8vw,15px);font-weight:600;margin-top:1px}
-#goal-box .g-progress{height:3px;border-radius:2px;background:rgba(255,255,255,.1);margin-top:5px;overflow:hidden}
-#goal-box .g-fill{height:100%;background:linear-gradient(90deg,#f0c040,#ff69b4);border-radius:2px;transition:width .5s}
-#goal-box.completed{border-color:#4caf50}
-#goal-box.completed .g-text{color:#4caf50}
-/* Next Queue */
-#next-box{position:absolute;top:12px;right:12px;width:clamp(72px,14vw,110px);background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.15);border-radius:12px;backdrop-filter:blur(4px);display:flex;flex-direction:column;align-items:center;padding:6px 4px}
-#next-box .label{color:rgba(255,255,255,.5);font-size:clamp(9px,1.5vw,12px);text-transform:uppercase;letter-spacing:1px}
-#next-preview{width:clamp(36px,8vw,60px);height:clamp(36px,8vw,60px);position:relative}
-#next-name{color:rgba(255,255,255,.6);font-size:clamp(8px,1.2vw,11px);font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-/* Launcher label */
-#launcher-label{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);text-align:center;color:rgba(255,255,255,.35);font-size:clamp(9px,1.3vw,12px);letter-spacing:0.5px}
-#launcher-name{color:#f0c040;font-weight:600}
-/* Combo badge */
-#combo{position:fixed;top:72px;left:50%;transform:translateX(-50%) scale(0.85);opacity:0;color:#fff;background:linear-gradient(180deg,#ff8a00,#ff3d7f);border:2px solid #fff;border-radius:999px;padding:4px 14px;font:900 clamp(14px,2.5vw,20px) system-ui,sans-serif;text-shadow:0 1px 3px #000;transition:opacity 160ms,transform 160ms;z-index:40;pointer-events:none}
-#combo.show{opacity:1;transform:translateX(-50%) scale(1)}
+/* Combo badge — shows in top-right area (where Next preview was) */
+#combo{position:fixed;top:clamp(48px,8vw,64px);right:12px;z-index:45;opacity:0;color:#fff;background:linear-gradient(180deg,#ff8a00,#ff3d7f);border:2px solid #fff;border-radius:999px;padding:4px 14px;font:900 clamp(14px,2.5vw,20px) system-ui,sans-serif;text-shadow:0 1px 3px #000;transition:opacity 160ms,transform 160ms;pointer-events:none;transform:scale(0.85);transform-origin:center right}
+#combo.show{opacity:1;transform:scale(1)}
 /* Level badges */
 .level-badge{position:fixed;pointer-events:none;z-index:15;width:clamp(16px,2.5vw,24px);height:clamp(16px,2.5vw,24px);border-radius:50%;background:rgba(0,0,0,.65);border:1.5px solid rgba(255,255,255,.5);color:#fff;font:700 clamp(8px,1.3vw,12px) system-ui,sans-serif;display:flex;align-items:center;justify-content:center;text-shadow:0 1px 2px #000;transform:translate(-50%,-50%)}
 /* Admin panel */
@@ -63,21 +47,15 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a0a2e;font-family:
 #admin-panel .sep{border-top:1px solid rgba(255,255,255,.1);margin:2px 0}
 /* Score popup */
 .score-popup{position:fixed;pointer-events:none;z-index:50;color:#fff8b5;font:800 clamp(16px,3vw,26px) system-ui,sans-serif;text-shadow:0 2px 6px #000,0 0 16px #ff9,0 0 30px rgba(255,200,50,.3);will-change:transform,opacity,left,top}
-/* Game Over / Victory */
-#gameover,#victory{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7);backdrop-filter:blur(8px)}
-#gameover.active,#victory.active{display:flex}
-#gameover-box,#victory-box{background:linear-gradient(145deg,rgba(30,10,50,.95),rgba(15,5,30,.98));border:2px solid #f0c040;border-radius:18px;padding:clamp(24px,5vw,48px);text-align:center;max-width:420px;width:90%;box-shadow:0 0 60px rgba(240,192,64,.2)}
-#victory-box{border-color:#4caf50;box-shadow:0 0 60px rgba(76,175,80,.25)}
-#gameover-box h2,#victory-box h2{font-size:clamp(28px,5vw,44px);margin-bottom:8px;text-shadow:0 2px 10px rgba(240,192,64,.3)}
-#gameover-box h2{color:#f0c040}
-#victory-box h2{color:#4caf50}
-#gameover-box .sub,#victory-box .sub{color:rgba(255,255,255,.6);font-size:14px;margin-bottom:16px}
-#gameover-box .final-score,#victory-box .final-score{color:#fff;font-size:clamp(32px,6vw,52px);font-weight:700;margin:12px 0}
-#gameover-box .final-score span,#victory-box .final-score span{color:#f0c040}
-#restart-btn,#victory-next-btn{background:linear-gradient(135deg,#f0c040,#d4a020);border:none;color:#1a0a2e;font-size:clamp(16px,3vw,22px);font-weight:700;padding:12px 36px;border-radius:10px;cursor:pointer;transition:transform .15s,box-shadow .15s;margin-top:12px}
-#restart-btn:hover,#victory-next-btn:hover{transform:scale(1.05);box-shadow:0 4px 24px rgba(240,192,64,.4)}
-#restart-btn:active,#victory-next-btn:active{transform:scale(.97)}
 /* Merge flash */
+#gameover-box{background:linear-gradient(145deg,rgba(30,10,50,.95),rgba(15,5,30,.98));border:2px solid #f0c040;border-radius:18px;padding:clamp(24px,5vw,48px);text-align:center;max-width:420px;width:90%;box-shadow:0 0 60px rgba(240,192,64,.2)}
+#gameover-box h2{font-size:clamp(28px,5vw,44px);margin-bottom:8px;text-shadow:0 2px 10px rgba(240,192,64,.3);color:#f0c040}
+#gameover-box .sub{color:rgba(255,255,255,.6);font-size:14px;margin-bottom:16px}
+#gameover-box .final-score{color:#fff;font-size:clamp(32px,6vw,52px);font-weight:700;margin:12px 0}
+#gameover-box .final-score span{color:#f0c040}
+#restart-btn{background:linear-gradient(135deg,#f0c040,#d4a020);border:none;color:#1a0a2e;font-size:clamp(16px,3vw,22px);font-weight:700;padding:12px 36px;border-radius:10px;cursor:pointer;transition:transform .15s,box-shadow .15s;margin-top:12px}
+#restart-btn:hover{transform:scale(1.05);box-shadow:0 4px 24px rgba(240,192,64,.4)}
+#restart-btn:active{transform:scale(.97)}
 .merge-flash{position:fixed;inset:0;z-index:5;pointer-events:none;opacity:0;transition:opacity .15s}
 .merge-flash.active{opacity:1}
 /* Word Guessing */
@@ -147,19 +125,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a0a2e;font-family:
 <body>
 <div id="game-container"></div>
 <div id="hud">
-  <div id="goal-box">
-    <div class="g-label">Goal</div>
-    <div class="g-text" id="goal-text">Reach Level 4</div>
-    <div class="g-progress"><div class="g-fill" id="goal-fill" style="width:0%"></div></div>
-  </div>
   <div id="score">SCORE: <span id="score-val">0</span></div>
   <div id="combo"></div>
-  <div id="next-box">
-    <div class="label">NEXT</div>
-    <div id="next-preview"></div>
-    <div id="next-name"></div>
-  </div>
-  <div id="launcher-label">Launching: <span id="launcher-name"></span></div>
 </div>
 <div id="info-btn">?</div>
 <div id="gameover">
@@ -170,15 +137,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a0a2e;font-family:
     <button id="restart-btn">▶ Play Again</button>
   </div>
 </div>
-<div id="victory">
-  <div id="victory-box">
-    <h2>🎉 Victory!</h2>
-    <div class="sub" id="victory-desc">Goal Complete!</div>
-    <div class="final-score"><span id="victory-score">0</span></div>
-    <button id="victory-next-btn">▶ Next Goal</button>
-  </div>
-</div>
-<!-- Admin -->
 <div id="admin-bar"><span id="ver-stamp">07/26/26 20:41 EST</span><button id="admin-lock" title="Admin mode">🔒</button></div>
 <div id="admin-panel">
   <div class="a-title">Set Next Throw</div>
@@ -245,8 +203,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a0a2e;font-family:
         <li><strong>Wrong guess</strong>: 4 golf balls spawn in the corners of the board.</li>
       </ul>
       <p>Words are 5–9 letters long. Each player's word progress is saved automatically.</p>
-      <h3>Goals</h3>
-      <p>Complete the goal card objectives to advance to the next goal level.</p>
       <h3>Power-ups</h3>
       <ul>
         <li>🍺 <strong>Beer</strong> — Grows items on contact</li>
@@ -1434,9 +1390,6 @@ let queue = [];
 let activeItem = null;
 let allItems = [];
 let itemBodies = new Map();
-let currentGoal = null;
-let goalLevel = 0;
-let maxedCount = 0;
 let comboCount = 0;
 let lastMergeTime = 0;
 let frameCount = 0;
@@ -1467,7 +1420,7 @@ function randomType() {
   return 94; // Split (0.2%)
 }
 
-function fillQueue() { while (queue.length < MAX_QUEUE) queue.push(randomType()); updatePreview(); }
+function fillQueue() { while (queue.length < MAX_QUEUE) queue.push(randomType()); }
 function popQueue() { const t = queue.shift(); fillQueue(); return t; }
 
 // ============================================================
@@ -1521,9 +1474,7 @@ function createLauncherItem() {
   itemBodies.set(body, { type, level, mesh });
   allItems.push(activeItem);
 
-  document.getElementById('launcher-name').textContent = ITEM_NAMES[type];
   updateAimGuide();
-  updatePreview();
 }
 
 function launchItem() {
@@ -1550,7 +1501,6 @@ function launchItem() {
 
   playSound('launch');
   activeItem = null;
-  document.getElementById('launcher-name').textContent = '';
   trajLine.visible = false;
 
   setTimeout(() => { if (gameRunning) createLauncherItem(); }, 350);
@@ -1652,7 +1602,6 @@ function checkMerge(collision) {
   spawnMergeParticles(mid, ITEM_COLORS[newType]);
   showMergeFlash(newType);
   playSound('merge');
-  checkGoal();
 }
 
 function removeItem(body) {
@@ -1674,9 +1623,7 @@ function spawnMergedItem(type, level, position) {
     const bonus = (MAX_LEVEL+1)*SCORE_PER_LEVEL;
     createScorePopup(position, `+${bonus} MAX!`);
     score += bonus;
-    maxedCount++;
     updateScore();
-    checkGoal();
     return;
   }
   const mesh = buildItemMesh(type);
@@ -1873,9 +1820,8 @@ function handleBeerHit(beerItem, targetItem) {
         spawnMergeParticles(mid, 0xffcc33);
         createScorePopup(mid, `+${(MAX_LEVEL+1)*SCORE_PER_LEVEL} MAX!`);
         score += (MAX_LEVEL+1)*SCORE_PER_LEVEL;
-        maxedCount++;
         updateScore();
-        checkGoal();
+        decrementCountdown();
         playSound('goal');
         return false;
       }
@@ -2004,7 +1950,7 @@ function handleBombHit(bombItem, collisionPoint, explosionRadius) {
               } else {
                 removeItem(tBody);
                 spawnMergeParticles(pos, 0xff4400);
-                maxedCount++;
+                decrementCountdown();
                 return false;
               }
             }
@@ -2014,7 +1960,6 @@ function handleBombHit(bombItem, collisionPoint, explosionRadius) {
       }
       if (destroyed.length > 0 && boomIdx >= destroyed.length) {
         updateScore();
-        checkGoal();
       }
       return boomIdx < destroyed.length;
     }
@@ -2235,98 +2180,11 @@ function playSound(name) {
 // ============================================================
 // GOALS
 // ============================================================
-const GOALS = [
-  { type: 'maxed', target: 3, desc: 'Complete 3 items (merge to max)' },
-  { type: 'maxed', target: 6, desc: 'Complete 6 items' },
-  { type: 'maxed', target: 9, desc: 'Complete 9 items 🏆' },
-];
-
-function generateGoal() {
-  goalLevel = Math.min(goalLevel, GOALS.length - 1);
-  currentGoal = GOALS[goalLevel];
-  updateGoalUI();
-}
-
-function updateGoalUI() {
-  const text = document.getElementById('goal-text');
-  const fill = document.getElementById('goal-fill');
-  const box = document.getElementById('goal-box');
-  if (!currentGoal) { text.textContent = '🏆 All Goals Complete!'; fill.style.width = '100%'; return; }
-  text.textContent = currentGoal.desc;
-  box.classList.remove('completed');
-  let progress = 0;
-  if (currentGoal.type === 'score') {
-    progress = Math.min(score / currentGoal.target, 1);
-  } else if (currentGoal.type === 'maxed') {
-    progress = Math.min(maxedCount / currentGoal.target, 1);
-  }
-  fill.style.width = (progress * 100) + '%';
-  if (progress >= 1) box.classList.add('completed');
-}
-
-function checkGoal() {
-  if (!currentGoal) return;
-  let achieved = false;
-  if (currentGoal.type === 'score') {
-    achieved = score >= currentGoal.target;
-  } else if (currentGoal.type === 'maxed') {
-    achieved = maxedCount >= currentGoal.target;
-  }
-  if (achieved) {
-    playSound('goal');
-    showVictory();
-  }
-  updateGoalUI();
-}
-
-function showVictory() {
-  gameRunning = false;
-  document.getElementById('victory-score').textContent = score.toLocaleString();
-  document.getElementById('victory-desc').textContent = currentGoal ? currentGoal.desc : 'All Goals Complete!';
-  document.getElementById('victory').classList.add('active');
-}
-
-function nextGoal() {
-  document.getElementById('victory').classList.remove('active');
-  goalLevel++;
-  if (goalLevel >= GOALS.length) {
-    currentGoal = null;
-    document.getElementById('goal-text').textContent = '🏆 All Goals Complete!';
-    document.getElementById('goal-fill').style.width = '100%';
-    gameRunning = true;
-    if (!activeItem) createLauncherItem();
-    return;
-  }
-  generateGoal();
-  gameRunning = true;
-  if (!activeItem) createLauncherItem();
-}
-
 // ============================================================
 // UI
 // ============================================================
 function updateScore() {
   document.getElementById('score-val').textContent = score.toLocaleString();
-  updateGoalUI();
-}
-
-function updatePreview() {
-  const preview = document.getElementById('next-preview');
-  const nameEl = document.getElementById('next-name');
-  preview.innerHTML = '';
-  if (queue.length === 0) { nameEl.textContent = ''; return; }
-  const type = queue[0];
-  nameEl.textContent = ITEM_NAMES[type];
-  const canvas = document.createElement('canvas');
-  canvas.width = 120; canvas.height = 120; preview.appendChild(canvas);
-  const r2 = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-  r2.setSize(120, 120); r2.setPixelRatio(1);
-  const s2 = new THREE.Scene();
-  const c2 = new THREE.PerspectiveCamera(35, 1, 0.1, 10);
-  c2.position.set(1.2, 0.8, 1.8); c2.lookAt(0, 0, 0);
-  s2.add(new THREE.DirectionalLight(0xffffff, 1)); s2.add(new THREE.AmbientLight(0x404060, 0.5));
-  s2.add(buildItemMesh(type));
-  r2.render(s2, c2); r2.dispose();
 }
 
 // ============================================================
@@ -2344,7 +2202,7 @@ function restartGame() {
   bodies.forEach(body => { const d = itemBodies.get(body); if (d) scene.remove(d.mesh); world.removeBody(body); });
   itemBodies.clear(); allItems = []; activeItem = null; queue = [];
   trajLine.visible = false;
-  goalLevel = 0; maxedCount = 0; comboCount = 0; lastMergeTime = 0; score = 0;
+  comboCount = 0; lastMergeTime = 0; score = 0;
   document.querySelectorAll('.score-popup').forEach(el => el.remove());
   scorePopups.length = 0;
   particles.forEach(p => { scene.remove(p.mesh); p.mesh.geometry.dispose(); p.mesh.material.dispose(); });
@@ -2354,11 +2212,9 @@ function restartGame() {
   document.getElementById('combo').classList.remove('show');
   updateScore();
   document.getElementById('gameover').classList.remove('active');
-  document.getElementById('victory').classList.remove('active');
   gameRunning = true;
   initBoard();
   fillQueue();
-  generateGoal();
   setTimeout(() => { if (gameRunning) createLauncherItem(); }, 500);
 }
 
@@ -2643,8 +2499,6 @@ document.getElementById('admin-random').addEventListener('click', () => {
   adminForcedType = -1;
   document.querySelectorAll('#admin-panel button').forEach(b => b.classList.remove('sel'));
   fillQueue();
-  updatePreview();
-  document.getElementById('launcher-name').textContent = '';
 });
 
 document.querySelectorAll('#admin-panel button[data-type]').forEach(btn => {
@@ -2656,8 +2510,6 @@ document.querySelectorAll('#admin-panel button[data-type]').forEach(btn => {
     // Force the next queue item to be this type
     if (queue.length > 0) queue[0] = type;
     else queue.push(type);
-    updatePreview();
-    document.getElementById('launcher-name').textContent = ITEM_NAMES[type];
   });
 });
 
@@ -2669,7 +2521,6 @@ popQueue = function() {
 };
 // ============================================================
 document.getElementById('restart-btn').addEventListener('click', restartGame);
-document.getElementById('victory-next-btn').addEventListener('click', nextGoal);
 
 // ============================================================
 // WORD GUESSING GAME
@@ -2717,7 +2568,7 @@ function initPlayerNameScreen() {
     try { localStorage.setItem(LAST_PLAYER_KEY, name); } catch (e) {}
     overlay.classList.add('hidden');
     startWordGame();
-    if (!gameRunning) { gameRunning = true; initBoard(); fillQueue(); generateGoal(); updateScore(); setTimeout(() => createLauncherItem(), 500); }
+    if (!gameRunning) { gameRunning = true; initBoard(); fillQueue(); updateScore(); setTimeout(() => createLauncherItem(), 500); }
   });
 
   input.addEventListener('keydown', e => { if (e.key === 'Enter') confirmBtn.click(); });
@@ -3000,7 +2851,6 @@ updateCameraForViewport();
 gameRunning = true;
 initBoard();
 fillQueue();
-generateGoal();
 updateScore();
 setTimeout(() => { if (gameRunning) createLauncherItem(); }, 500);
 animate();
