@@ -2523,11 +2523,11 @@ popQueue = function() {
 document.getElementById('restart-btn').addEventListener('click', restartGame);
 
 // ============================================================
-// WORD GUESSING GAME
+// Player system (localStorage + server sync for cross-device)
 // ============================================================
-// Player system
 const PLAYERS_KEY = 'merging-game-players';
 const LAST_PLAYER_KEY = 'merging-game-last-player';
+const MERGE_API = '/MergingGame/api/';
 let currentPlayer = '';
 
 function loadPlayerData() {
@@ -2543,6 +2543,41 @@ function getLastPlayer() {
   try { return localStorage.getItem(LAST_PLAYER_KEY); } catch (e) { return null; }
 }
 
+// Server sync — fire-and-forget, never blocks gameplay
+async function syncPlayersFromServer() {
+  try {
+    const resp = await fetch(MERGE_API + 'players');
+    if (!resp.ok) return;
+    const data = await resp.json();
+    if (!data.players) return;
+    const local = loadPlayerData();
+    // Merge server players into local (server is source of truth)
+    for (const name of Object.keys(data.players)) {
+      if (!local[name]) local[name] = data.players[name];
+      else {
+        // Keep the higher wordIndex
+        const si = data.players[name].wordIndex;
+        const li = local[name].wordIndex;
+        if (si != null && (li == null || si > li)) local[name].wordIndex = si;
+      }
+    }
+    savePlayerData(local);
+  } catch (e) { /* server not reachable — use localStorage only */ }
+}
+
+async function syncPlayerToServer(player) {
+  const local = loadPlayerData();
+  const payload = {};
+  if (local[player]) payload[player] = local[player];
+  try {
+    await fetch(MERGE_API + 'players', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ players: payload })
+    });
+  } catch (e) { /* silently fail */ }
+}
+
 // Word game state
 let wordGame = null; // null = not started, {} = active
 
@@ -2552,12 +2587,13 @@ function initPlayerNameScreen() {
   const select = document.getElementById('player-select');
   const confirmBtn = document.getElementById('name-confirm');
 
-  // Populate existing players
-  const names = getPlayerNames();
-  select.innerHTML = '<option value="">-- Select --</option>';
-  names.forEach(n => { const o = document.createElement('option'); o.value = n; o.textContent = n; select.appendChild(o); });
+  syncPlayersFromServer().then(() => {
+    // Populate existing players from merged data
+    const names = getPlayerNames();
+    select.innerHTML = '<option value="">-- Select --</option>';
+    names.forEach(n => { const o = document.createElement('option'); o.value = n; o.textContent = n; select.appendChild(o); });
+  });
 
-  // Pre-fill last player
   const last = getLastPlayer();
   if (last) input.value = last;
 
@@ -2567,6 +2603,7 @@ function initPlayerNameScreen() {
     currentPlayer = name;
     try { localStorage.setItem(LAST_PLAYER_KEY, name); } catch (e) {}
     overlay.classList.add('hidden');
+    syncPlayerToServer(name);
     startWordGame();
     if (!gameRunning) { gameRunning = true; initBoard(); fillQueue(); updateScore(); setTimeout(() => createLauncherItem(), 500); }
   });
@@ -2585,12 +2622,12 @@ function setPlayerWordIndex(player, idx) {
   if (!data[player]) data[player] = {};
   data[player].wordIndex = idx;
   savePlayerData(data);
+  syncPlayerToServer(player); // fire-and-forget server sync
 }
 
 function getCurrentWord() {
   if (!WORD_LIST || WORD_LIST.length === 0) return null;
   const idx = getPlayerWordIndex(currentPlayer);
-  // Wrap around if we've used all words
   return WORD_LIST[idx % WORD_LIST.length];
 }
 
@@ -2841,8 +2878,17 @@ const lastPlayer = getLastPlayer();
 if (lastPlayer && loadPlayerData()[lastPlayer]) {
   // Auto-login returning player
   currentPlayer = lastPlayer;
+  const localIdx = getPlayerWordIndex(currentPlayer);
   document.getElementById('name-overlay').classList.add('hidden');
   startWordGame();
+  // Sync from server in background (may update word index)
+  syncPlayersFromServer().then(() => {
+    const mergedIdx = getPlayerWordIndex(currentPlayer);
+    if (mergedIdx > localIdx) {
+      // Server had a newer word index — restart with it
+      startWordGame();
+    }
+  });
 } else {
   initPlayerNameScreen();
 }
