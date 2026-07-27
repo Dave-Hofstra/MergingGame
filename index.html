@@ -2609,12 +2609,17 @@ function initPlayerNameScreen() {
   confirmBtn.addEventListener('click', () => {
     const name = input.value.trim();
     if (!name) return;
+    const isNew = !loadPlayerData()[name]; // new player?
     currentPlayer = name;
     try { localStorage.setItem(LAST_PLAYER_KEY, name); } catch (e) {}
     overlay.classList.add('hidden');
     syncPlayerToServer(name);
     startWordGame();
     if (!gameRunning) { gameRunning = true; initBoard(); fillQueue(); updateScore(); setTimeout(() => createLauncherItem(), 500); }
+    // Show tutorial for first-time players
+    if (isNew) {
+      setTimeout(() => document.getElementById('info-overlay').classList.add('active'), 300);
+    }
   });
 
   input.addEventListener('keydown', e => { if (e.key === 'Enter') confirmBtn.click(); });
