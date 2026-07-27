@@ -15,6 +15,7 @@
 <title>MergingGame</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
+<script src="words.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:100%;height:100%;overflow:hidden;background:#1a0a2e;font-family:'Segoe UI',Arial,sans-serif;-webkit-user-select:none;user-select:none;overscroll-behavior:none}
@@ -79,6 +80,68 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a0a2e;font-family:
 /* Merge flash */
 .merge-flash{position:fixed;inset:0;z-index:5;pointer-events:none;opacity:0;transition:opacity .15s}
 .merge-flash.active{opacity:1}
+/* Word Guessing */
+#word-area{position:fixed;top:clamp(48px,9vw,72px);left:50%;transform:translateX(-50%);z-index:12;pointer-events:auto;cursor:pointer;display:none;flex-direction:column;align-items:center;gap:2px}
+#word-letters{display:flex;gap:clamp(2px,0.5vw,4px);justify-content:center}
+.word-box{width:clamp(24px,5vw,42px);height:clamp(28px,5.5vw,46px);border:2px solid rgba(255,255,255,.3);border-radius:6px;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;font:700 clamp(14px,3vw,28px) system-ui,sans-serif;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.6);position:relative}
+.word-box.revealed{border-color:#4caf50;background:rgba(76,175,80,.2);color:#4caf50;animation:wordReveal .3s ease}
+.word-box.countdown{border-color:#f0c040;background:rgba(240,192,64,.12);color:#f0c040}
+.word-box.countdown .count-num{font:800 clamp(11px,2.2vw,22px) system-ui,sans-serif}
+@keyframes wordReveal{0%{transform:scale(1.2);opacity:.5}100%{transform:scale(1);opacity:1}}
+#word-hint{color:rgba(255,255,255,.25);font:600 clamp(7px,1vw,10px) system-ui,sans-serif;text-transform:uppercase;letter-spacing:1px;pointer-events:none}
+/* Info button */
+#info-btn{position:fixed;top:clamp(42px,8vw,64px);right:12px;z-index:12;width:clamp(22px,3.5vw,32px);height:clamp(22px,3.5vw,32px);border-radius:50%;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.4);color:rgba(255,255,255,.5);font:700 clamp(12px,2vw,18px) system-ui,sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;pointer-events:auto;transition:background .2s,color .2s}
+#info-btn:hover{background:rgba(255,255,255,.1);color:#fff}
+/* Guess overlay */
+#guess-overlay{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(4px)}
+#guess-overlay.active{display:flex}
+#guess-box{background:linear-gradient(145deg,rgba(30,10,50,.96),rgba(15,5,30,.98));border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:clamp(16px,3vw,32px);max-width:360px;width:85%;text-align:center}
+#guess-box h3{color:#f0c040;font-size:clamp(16px,3vw,24px);margin-bottom:12px}
+#guess-input{width:100%;padding:clamp(8px,1.5vw,12px);font-size:clamp(16px,3vw,22px);background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:#fff;text-align:center;text-transform:uppercase;letter-spacing:3px;outline:none}
+#guess-input:focus{border-color:#f0c040}
+#guess-btns{display:flex;gap:8px;margin-top:12px;justify-content:center}
+#guess-btns button{padding:clamp(8px,1.5vw,12px) clamp(16px,3vw,28px);border-radius:8px;border:none;font:700 clamp(13px,2vw,17px) system-ui,sans-serif;cursor:pointer;transition:transform .15s}
+#guess-submit{background:linear-gradient(135deg,#f0c040,#d4a020);color:#1a0a2e}
+#guess-cancel{background:rgba(255,255,255,.1);color:rgba(255,255,255,.7)}
+#guess-btns button:active{transform:scale(.96)}
+/* Word win overlay */
+#word-win-overlay{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.65);backdrop-filter:blur(6px)}
+#word-win-overlay.active{display:flex}
+#word-win-box{background:linear-gradient(145deg,rgba(30,10,50,.96),rgba(15,5,30,.98));border:2px solid #4caf50;border-radius:16px;padding:clamp(20px,4vw,40px);max-width:380px;width:85%;text-align:center;box-shadow:0 0 60px rgba(76,175,80,.2)}
+#word-win-box h2{color:#4caf50;font-size:clamp(22px,4vw,32px);margin-bottom:4px}
+#word-win-word{color:#fff;font:700 clamp(18px,3.5vw,28px) system-ui,sans-serif;margin:8px 0;letter-spacing:4px}
+#word-win-bonus{color:#f0c040;font:800 clamp(16px,3vw,24px) system-ui,sans-serif;margin:8px 0}
+#word-win-btns{display:flex;gap:10px;margin-top:14px;justify-content:center;flex-wrap:wrap}
+#word-win-btns button{padding:clamp(10px,2vw,14px) clamp(20px,4vw,32px);border-radius:10px;border:none;font:700 clamp(13px,2.2vw,18px) system-ui,sans-serif;cursor:pointer;transition:transform .15s,box-shadow .15s}
+#word-win-btns button:active{transform:scale(.96)}
+#word-win-reset{background:linear-gradient(135deg,#ff6b6b,#e53935);color:#fff}
+#word-win-continue{background:linear-gradient(135deg,#f0c040,#d4a020);color:#1a0a2e}
+/* Info overlay */
+#info-overlay{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.65);backdrop-filter:blur(6px)}
+#info-overlay.active{display:flex}
+#info-box{background:linear-gradient(145deg,rgba(30,10,50,.96),rgba(15,5,30,.98));border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:clamp(16px,3vw,28px);max-width:400px;width:85%;max-height:80vh;display:flex;flex-direction:column}
+#info-scroll{overflow-y:auto;flex:1;padding-right:4px;color:rgba(255,255,255,.8);font-size:clamp(12px,1.8vw,15px);line-height:1.5}
+#info-scroll h2{color:#f0c040;font-size:clamp(18px,3.5vw,26px);margin-bottom:8px}
+#info-scroll h3{color:#fff;font-size:clamp(14px,2.2vw,18px);margin:12px 0 4px}
+#info-scroll ul{margin:4px 0 8px 16px}
+#info-scroll li{margin:2px 0}
+#info-close{width:100%;margin-top:12px;padding:clamp(8px,1.5vw,12px);border-radius:8px;border:none;background:linear-gradient(135deg,#f0c040,#d4a020);color:#1a0a2e;font:700 clamp(14px,2.2vw,18px) system-ui,sans-serif;cursor:pointer;transition:transform .15s}
+#info-close:active{transform:scale(.97)}
+/* Name overlay */
+#name-overlay{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.8);backdrop-filter:blur(8px)}
+#name-overlay.hidden{display:none}
+#name-card{background:linear-gradient(145deg,rgba(30,10,50,.96),rgba(15,5,30,.98));border:2px solid #f0c040;border-radius:16px;padding:clamp(20px,4vw,36px);max-width:360px;width:85%;text-align:center;box-shadow:0 0 60px rgba(240,192,64,.15)}
+#name-card h1{font-size:clamp(28px,6vw,42px);color:#f0c040;margin-bottom:2px}
+#name-card .sub{color:rgba(255,255,255,.4);font-size:clamp(11px,1.8vw,14px);margin-bottom:12px}
+#name-card p{color:rgba(255,255,255,.7);font-size:clamp(11px,1.6vw,14px);margin-bottom:12px}
+#name-card .player-picker{display:flex;flex-direction:column;gap:6px;text-align:left;margin-bottom:12px}
+#name-card .player-picker label{color:rgba(255,255,255,.5);font-size:clamp(10px,1.3vw,12px);text-transform:uppercase;letter-spacing:1px}
+#name-card .player-picker input,#name-card .player-picker select{width:100%;padding:clamp(8px,1.2vw,10px);border-radius:6px;border:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.4);color:#fff;font-size:clamp(14px,2vw,16px);outline:none}
+#name-card .player-picker select{color:rgba(255,255,255,.7)}
+#name-card .player-picker select option{background:#1a0a2e;color:#fff}
+#name-card .player-picker input:focus{border-color:#f0c040}
+#name-confirm{width:100%;padding:clamp(10px,1.8vw,14px);border-radius:10px;border:none;background:linear-gradient(135deg,#f0c040,#d4a020);color:#1a0a2e;font:700 clamp(16px,3vw,22px) system-ui,sans-serif;cursor:pointer;transition:transform .15s,box-shadow .15s}
+#name-confirm:active{transform:scale(.97)}
 </style>
 </head>
 <body>
@@ -98,6 +161,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a0a2e;font-family:
   </div>
   <div id="launcher-label">Launching: <span id="launcher-name"></span></div>
 </div>
+<div id="info-btn">?</div>
 <div id="gameover">
   <div id="gameover-box">
     <h2>Game Over</h2>
@@ -140,6 +204,73 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a0a2e;font-family:
   <button data-type="14">🍹 Margarita</button>
 </div>
 <div id="merge-flash" class="merge-flash"></div>
+<!-- Word Guessing UI -->
+<div id="word-area">
+  <div id="word-letters" class="word-letters"></div>
+  <div id="word-hint">Tap to guess</div>
+</div>
+<div id="guess-overlay">
+  <div id="guess-box">
+    <h3>Guess the Word</h3>
+    <input id="guess-input" type="text" maxlength="9" placeholder="Type your guess..." autocomplete="off">
+    <div id="guess-btns">
+      <button id="guess-submit">Guess</button>
+      <button id="guess-cancel">Cancel</button>
+    </div>
+  </div>
+</div>
+<div id="word-win-overlay">
+  <div id="word-win-box">
+    <h2 id="word-win-title">🎉 Word Complete!</h2>
+    <div id="word-win-word"></div>
+    <div id="word-win-bonus">+5000 BONUS!</div>
+    <div id="word-win-btns">
+      <button id="word-win-reset">Reset Board</button>
+      <button id="word-win-continue">Continue</button>
+    </div>
+  </div>
+</div>
+<div id="info-overlay">
+  <div id="info-box">
+    <div id="info-scroll">
+      <h2>How to Play</h2>
+      <h3>MergingGame</h3>
+      <p>Launch items onto the board by swiping from the launcher. When two items of the <strong>same type</strong> collide, they merge into a larger version (level up!). Items can merge up to level 10 — merging past level 10 gives bonus points.</p>
+      <h3>Word Challenge</h3>
+      <p>A hidden word appears at the top of the screen. One unrevealed letter at a time shows a <strong>countdown number</strong>. Each time you max out an item (merge past level 10), that countdown decreases by 1.</p>
+      <p>When the countdown reaches <strong>0</strong>, that letter is revealed! Then a new unrevealed letter gets a countdown of 9.</p>
+      <p>Tap the word area at any time to <strong>guess the full word</strong>.</p>
+      <ul>
+        <li><strong>Correct guess</strong> or <strong>all letters revealed</strong>: +5000 bonus points and a choice to reset the board or continue.</li>
+        <li><strong>Wrong guess</strong>: 4 golf balls spawn in the corners of the board.</li>
+      </ul>
+      <p>Words are 5–9 letters long. Each player's word progress is saved automatically.</p>
+      <h3>Goals</h3>
+      <p>Complete the goal card objectives to advance to the next goal level.</p>
+      <h3>Power-ups</h3>
+      <ul>
+        <li>🍺 <strong>Beer</strong> — Grows items on contact</li>
+        <li>💣 <strong>Bombs</strong> — Clear a radius of items</li>
+        <li>↔️ <strong>Split</strong> — Halves a maxed item</li>
+      </ul>
+    </div>
+    <button id="info-close">Got it!</button>
+  </div>
+</div>
+<div id="name-overlay">
+  <div id="name-card">
+    <h1>MERGINGAME</h1>
+    <div class="sub">Physics Merge Game</div>
+    <p>Enter your name to save your word progress across sessions.</p>
+    <div class="player-picker">
+      <label for="player-name-input">Player Name:</label>
+      <input type="text" id="player-name-input" maxlength="20" placeholder="Enter your name...">
+      <label for="player-select">Or choose existing:</label>
+      <select id="player-select"><option value="">-- Select --</option></select>
+    </div>
+    <button id="name-confirm">▶ Play</button>
+  </div>
+</div>
 
 <script>
 (function(){
@@ -2539,6 +2670,331 @@ popQueue = function() {
 // ============================================================
 document.getElementById('restart-btn').addEventListener('click', restartGame);
 document.getElementById('victory-next-btn').addEventListener('click', nextGoal);
+
+// ============================================================
+// WORD GUESSING GAME
+// ============================================================
+// Player system
+const PLAYERS_KEY = 'merging-game-players';
+const LAST_PLAYER_KEY = 'merging-game-last-player';
+let currentPlayer = '';
+
+function loadPlayerData() {
+  try { return JSON.parse(localStorage.getItem(PLAYERS_KEY)) || {}; } catch (e) { return {}; }
+}
+function savePlayerData(data) {
+  try { localStorage.setItem(PLAYERS_KEY, JSON.stringify(data)); } catch (e) {}
+}
+function getPlayerNames() {
+  return Object.keys(loadPlayerData()).sort();
+}
+function getLastPlayer() {
+  try { return localStorage.getItem(LAST_PLAYER_KEY); } catch (e) { return null; }
+}
+
+// Word game state
+let wordGame = null; // null = not started, {} = active
+
+function initPlayerNameScreen() {
+  const overlay = document.getElementById('name-overlay');
+  const input = document.getElementById('player-name-input');
+  const select = document.getElementById('player-select');
+  const confirmBtn = document.getElementById('name-confirm');
+
+  // Populate existing players
+  const names = getPlayerNames();
+  select.innerHTML = '<option value="">-- Select --</option>';
+  names.forEach(n => { const o = document.createElement('option'); o.value = n; o.textContent = n; select.appendChild(o); });
+
+  // Pre-fill last player
+  const last = getLastPlayer();
+  if (last) input.value = last;
+
+  confirmBtn.addEventListener('click', () => {
+    const name = input.value.trim();
+    if (!name) return;
+    currentPlayer = name;
+    try { localStorage.setItem(LAST_PLAYER_KEY, name); } catch (e) {}
+    overlay.classList.add('hidden');
+    startWordGame();
+    if (!gameRunning) { gameRunning = true; initBoard(); fillQueue(); generateGoal(); updateScore(); setTimeout(() => createLauncherItem(), 500); }
+  });
+
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') confirmBtn.click(); });
+  select.addEventListener('change', () => { if (select.value) { input.value = select.value; } });
+}
+
+function getPlayerWordIndex(player) {
+  const data = loadPlayerData();
+  return (data[player] && data[player].wordIndex != null) ? data[player].wordIndex : 0;
+}
+
+function setPlayerWordIndex(player, idx) {
+  const data = loadPlayerData();
+  if (!data[player]) data[player] = {};
+  data[player].wordIndex = idx;
+  savePlayerData(data);
+}
+
+function getCurrentWord() {
+  if (!WORD_LIST || WORD_LIST.length === 0) return null;
+  const idx = getPlayerWordIndex(currentPlayer);
+  // Wrap around if we've used all words
+  return WORD_LIST[idx % WORD_LIST.length];
+}
+
+function advanceWord() {
+  const idx = getPlayerWordIndex(currentPlayer);
+  setPlayerWordIndex(currentPlayer, idx + 1);
+}
+
+function startWordGame() {
+  const word = getCurrentWord();
+  if (!word) { wordGame = null; document.getElementById('word-area').style.display = 'none'; return; }
+  // letterStates: 0=hidden(countdown), 1=letter(the one with countdown), 2=revealed
+  wordGame = {
+    word: word,
+    letterStates: new Array(word.length).fill(0),
+    countdownIndex: -1, // index of letter with countdown
+    countdownValue: 9, // current countdown number
+    revealedCount: 0,
+    won: false
+  };
+  // Pick first random letter to countdown
+  pickNewCountdownLetter();
+  updateWordDisplay();
+  document.getElementById('word-area').style.display = 'flex';
+}
+
+function pickNewCountdownLetter() {
+  if (!wordGame) return;
+  // Find hidden unrevealed letters
+  const hidden = [];
+  for (let i = 0; i < wordGame.word.length; i++) {
+    if (wordGame.letterStates[i] === 0) hidden.push(i);
+  }
+  if (hidden.length === 0) {
+    // All letters revealed
+    wordGame.countdownIndex = -1;
+    wordGame.countdownValue = 0;
+    checkWordComplete();
+    return;
+  }
+  wordGame.countdownIndex = hidden[Math.floor(Math.random() * hidden.length)];
+  wordGame.letterStates[wordGame.countdownIndex] = 1; // mark as counting down
+  wordGame.countdownValue = 9;
+}
+
+function updateWordDisplay() {
+  if (!wordGame) return;
+  const container = document.getElementById('word-letters');
+  container.innerHTML = '';
+  for (let i = 0; i < wordGame.word.length; i++) {
+    const box = document.createElement('div');
+    box.className = 'word-box';
+    if (wordGame.letterStates[i] === 2) {
+      // Revealed
+      box.classList.add('revealed');
+      box.textContent = wordGame.word[i];
+    } else if (wordGame.letterStates[i] === 1) {
+      // Countdown mode
+      box.classList.add('countdown');
+      const num = document.createElement('span');
+      num.className = 'count-num';
+      num.textContent = wordGame.countdownValue;
+      box.appendChild(num);
+    }
+    container.appendChild(box);
+  }
+}
+
+function decrementCountdown() {
+  if (!wordGame || wordGame.won) return;
+  if (wordGame.countdownIndex < 0) return; // no active countdown
+
+  wordGame.countdownValue--;
+  if (wordGame.countdownValue <= 0) {
+    // Reveal this letter
+    wordGame.letterStates[wordGame.countdownIndex] = 2;
+    wordGame.revealedCount++;
+    // Play reveal sound
+    playSound('merge');
+    // Update display
+    updateWordDisplay();
+    // Check if word complete
+    if (checkWordComplete()) return;
+    // Pick next countdown letter
+    pickNewCountdownLetter();
+  }
+  updateWordDisplay();
+}
+
+function checkWordComplete() {
+  if (!wordGame || wordGame.won) return false;
+  // Check if all letters revealed
+  let allRevealed = true;
+  for (let i = 0; i < wordGame.letterStates.length; i++) {
+    if (wordGame.letterStates[i] !== 2) { allRevealed = false; break; }
+  }
+  if (allRevealed) {
+    wordGame.won = true;
+    showWordWin();
+    return true;
+  }
+  return false;
+}
+
+function showWordWin() {
+  if (!wordGame) return;
+  gameRunning = false;
+  score += 5000;
+  updateScore();
+  document.getElementById('word-win-word').textContent = '"' + wordGame.word + '"';
+  document.getElementById('word-win-overlay').classList.add('active');
+  createScorePopup({ x: 0, y: 0.5, z: 0 }, '+5000 WORD!');
+  playSound('goal');
+  // Celebration: flash green
+  const flash = document.getElementById('merge-flash');
+  flash.style.background = 'radial-gradient(circle at center, #4caf50 0%, transparent 70%)';
+  flash.classList.add('active');
+  setTimeout(() => flash.classList.remove('active'), 400);
+}
+
+function handleGuess() {
+  const input = document.getElementById('guess-input');
+  const guess = input.value.trim().toUpperCase();
+  if (!guess || !wordGame) return;
+
+  document.getElementById('guess-overlay').classList.remove('active');
+
+  if (guess === wordGame.word) {
+    // Correct!
+    wordGame.won = true;
+    // Reveal all letters
+    for (let i = 0; i < wordGame.word.length; i++) {
+      wordGame.letterStates[i] = 2;
+    }
+    wordGame.revealedCount = wordGame.word.length;
+    updateWordDisplay();
+    showWordWin();
+  } else {
+    // Wrong - spawn 4 golf balls
+    playSound('gameover');
+    spawnPenaltyGolfBalls();
+  }
+  input.value = '';
+}
+
+function spawnPenaltyGolfBalls() {
+  const penaltyType = 0; // Golf Ball
+  const penaltyLevel = 1;
+  const positions = [
+    { x: -1.5, z: -2.5 },
+    { x: 1.5, z: -2.5 },
+    { x: -1.5, z: 2.5 },
+    { x: 1.5, z: 2.5 }
+  ];
+  positions.forEach(pos => {
+    const mesh = buildItemMesh(penaltyType);
+    const radius = getLevelRadius(penaltyLevel);
+    const sf = getLevelRadius(penaltyLevel) / BASE_RADIUS;
+    const vs = mesh.userData.visualScale || 1;
+    mesh.scale.set(sf * vs, sf * vs, sf * vs);
+    mesh.position.set(pos.x, radius + 0.05, pos.z);
+    scene.add(mesh);
+
+    const body = new CANNON.Body({ mass: 1, material: defaultMaterial });
+    body.position.set(pos.x, radius + 0.05, pos.z);
+    configureBody(body, radius);
+    world.addBody(body);
+
+    const item = { type: penaltyType, level: penaltyLevel, mesh, body, launched: true, _firstHit: true, _launchTime: performance.now(), _pastDeadline: true };
+    itemBodies.set(body, { type: penaltyType, level: penaltyLevel, mesh });
+    allItems.push(item);
+  });
+}
+
+function wordWinContinue() {
+  document.getElementById('word-win-overlay').classList.remove('active');
+  advanceWord();
+  startWordGame();
+  gameRunning = true;
+  if (!activeItem) createLauncherItem();
+}
+
+function wordWinResetBoard() {
+  document.getElementById('word-win-overlay').classList.remove('active');
+  advanceWord();
+  // Reset the board but keep score
+  const bodies = [...itemBodies.keys()];
+  bodies.forEach(body => { const d = itemBodies.get(body); if (d) scene.remove(d.mesh); world.removeBody(body); });
+  itemBodies.clear(); allItems = []; activeItem = null; queue = [];
+  trajLine.visible = false;
+  document.querySelectorAll('.score-popup').forEach(el => el.remove());
+  scorePopups.length = 0;
+  particles.forEach(p => { scene.remove(p.mesh); p.mesh.geometry.dispose(); p.mesh.material.dispose(); });
+  particles.length = 0;
+  itemBadges.forEach(el => el.remove());
+  itemBadges.clear();
+  document.getElementById('combo').classList.remove('show');
+  updateScore();
+  // Start fresh word
+  startWordGame();
+  gameRunning = true;
+  initBoard();
+  fillQueue();
+  setTimeout(() => { if (gameRunning) createLauncherItem(); }, 500);
+}
+
+// Integration hook: patch maxedCount increment
+const origSpawnMergedItem = spawnMergedItem;
+spawnMergedItem = function(type, level, position) {
+  if (level > MAX_LEVEL) {
+    // After maxed item disappears and before returning, decrement word countdown
+    origSpawnMergedItem(type, level, position);
+    decrementCountdown();
+  } else {
+    origSpawnMergedItem(type, level, position);
+  }
+};
+
+// Event listeners for word game (DOM is already loaded since script is at end of body)
+// Info button
+document.getElementById('info-btn').addEventListener('click', () => {
+  document.getElementById('info-overlay').classList.add('active');
+});
+document.getElementById('info-close').addEventListener('click', () => {
+  document.getElementById('info-overlay').classList.remove('active');
+});
+// Guess overlay
+document.getElementById('word-area').addEventListener('click', () => {
+  if (!wordGame || wordGame.won) return;
+  document.getElementById('guess-input').value = '';
+  document.getElementById('guess-overlay').classList.add('active');
+  setTimeout(() => document.getElementById('guess-input').focus(), 100);
+});
+document.getElementById('guess-submit').addEventListener('click', handleGuess);
+document.getElementById('guess-cancel').addEventListener('click', () => {
+  document.getElementById('guess-overlay').classList.remove('active');
+});
+document.getElementById('guess-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') handleGuess();
+  if (e.key === 'Escape') document.getElementById('guess-cancel').click();
+});
+// Word win
+document.getElementById('word-win-continue').addEventListener('click', wordWinContinue);
+document.getElementById('word-win-reset').addEventListener('click', wordWinResetBoard);
+
+// Init player screen
+const lastPlayer = getLastPlayer();
+if (lastPlayer && loadPlayerData()[lastPlayer]) {
+  // Auto-login returning player
+  currentPlayer = lastPlayer;
+  document.getElementById('name-overlay').classList.add('hidden');
+  startWordGame();
+} else {
+  initPlayerNameScreen();
+}
 
 updateCameraForViewport();
 gameRunning = true;
