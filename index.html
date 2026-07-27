@@ -2881,7 +2881,9 @@ if (lastPlayer && loadPlayerData()[lastPlayer]) {
   const localIdx = getPlayerWordIndex(currentPlayer);
   document.getElementById('name-overlay').classList.add('hidden');
   startWordGame();
-  // Sync from server in background (may update word index)
+  // Upload local data to server (so other devices can see this player)
+  syncPlayerToServer(currentPlayer);
+  // Sync from server in background (may update word index from another device)
   syncPlayersFromServer().then(() => {
     const mergedIdx = getPlayerWordIndex(currentPlayer);
     if (mergedIdx > localIdx) {
