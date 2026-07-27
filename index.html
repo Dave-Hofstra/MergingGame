@@ -46,7 +46,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a0a2e;font-family:
 #combo{position:fixed;top:72px;left:50%;transform:translateX(-50%) scale(0.85);opacity:0;color:#fff;background:linear-gradient(180deg,#ff8a00,#ff3d7f);border:2px solid #fff;border-radius:999px;padding:4px 14px;font:900 clamp(14px,2.5vw,20px) system-ui,sans-serif;text-shadow:0 1px 3px #000;transition:opacity 160ms,transform 160ms;z-index:40;pointer-events:none}
 #combo.show{opacity:1;transform:translateX(-50%) scale(1)}
 /* Level badges */
-.level-badge{position:fixed;pointer-events:none;z-index:15;width:clamp(16px,2.5vw,24px);height:clamp(16px,2.5vw,24px);border-radius:50%;background:rgba(0,0,0,.65);border:1.5px solid rgba(255,255,255,.5);color:#fff;font:700 clamp(8px,1.3vw,12px) system-ui,sans-serif;display:flex;align-items:center;justify-content:center;text-shadow:0 1px 2px #000;transform:translate(-50%,-50%);backdrop-filter:blur(2px)}
+.level-badge{position:fixed;pointer-events:none;z-index:15;width:clamp(16px,2.5vw,24px);height:clamp(16px,2.5vw,24px);border-radius:50%;background:rgba(0,0,0,.65);border:1.5px solid rgba(255,255,255,.5);color:#fff;font:700 clamp(8px,1.3vw,12px) system-ui,sans-serif;display:flex;align-items:center;justify-content:center;text-shadow:0 1px 2px #000;transform:translate(-50%,-50%)}
 /* Admin panel */
 #admin-bar{position:fixed;bottom:6px;right:6px;z-index:30;display:flex;align-items:center;gap:6px;pointer-events:none}
 #admin-bar>*{pointer-events:auto}
@@ -115,7 +115,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a0a2e;font-family:
   </div>
 </div>
 <!-- Admin -->
-<div id="admin-bar"><span id="ver-stamp">07/26/26 10:52 EST</span><button id="admin-lock" title="Admin mode">🔒</button></div>
+<div id="admin-bar"><span id="ver-stamp">07/26/26 20:41 EST</span><button id="admin-lock" title="Admin mode">🔒</button></div>
 <div id="admin-panel">
   <div class="a-title">Set Next Throw</div>
   <button id="admin-random" style="background:rgba(60,200,60,.2);border-color:#4caf50;text-align:center;font-weight:700">🎲 Normal</button>
@@ -129,10 +129,15 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a0a2e;font-family:
   <button data-type="7">Flamingo</button>
   <div class="sep"></div>
   <div class="a-title">Power-ups</div>
-  <button data-type="8">🍺 1x Beer</button>
-  <button data-type="9">🍺 2x Beer</button>
-  <button data-type="10">💣 Small Bomb</button>
-  <button data-type="11">💥 Big Bomb</button>
+  <button data-type="90">🍺 1x Beer</button>
+  <button data-type="91">🍺 2x Beer</button>
+  <button data-type="92">💣 Small Bomb</button>
+  <button data-type="93">💥 Big Bomb</button>
+  <button data-type="94">↔️ Split</button>
+  <div class="sep"></div>
+  <button data-type="12">🐊 Alligator</button>
+  <button data-type="13">🐢 Turtle</button>
+  <button data-type="14">🍹 Margarita</button>
 </div>
 <div id="merge-flash" class="merge-flash"></div>
 
@@ -144,9 +149,14 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a0a2e;font-family:
 // CONFIG — item types are fixed: two same-type items merge into
 // a larger version of the same type. Level = size progression.
 // ============================================================
-const ITEM_COLORS = ['#ffffff','#00e5ff','#ffeb3b','#ff9800','#ff4081','#e0e0e0','#8d6e63','#ff69b4','#ffb300','#ffb300','#222222','#444444'];
-const ITEM_NAMES = ['Golf Ball','Snorkel Mask','Snorkel Fins','Shrimp','Grouper Fish','Golf Cart','Palm Tree','Pink Flamingo','1x Beer','2x Beer','Small Bomb','Big Bomb'];
-const ITEM_COUNT = 12;
+const ITEM_COLORS = ['#ffffff','#00e5ff','#ffeb3b','#ff9800','#ff4081','#e0e0e0','#8d6e63','#ff69b4','#43583c','#2e3d23','#c4ec74'];
+const ITEM_NAMES = ['Golf Ball','Snorkel Mask','Snorkel Fins','Shrimp','Grouper Fish','Golf Cart','Palm Tree','Pink Flamingo','Alligator','Turtle','Margarita','1x Beer','2x Beer','Small Bomb','Big Bomb'];
+ITEM_COLORS[90]='#ffb300'; ITEM_NAMES[90]='1x Beer';
+ITEM_COLORS[91]='#ffb300'; ITEM_NAMES[91]='2x Beer';
+ITEM_COLORS[92]='#222222'; ITEM_NAMES[92]='Small Bomb';
+ITEM_COLORS[93]='#444444'; ITEM_NAMES[93]='Big Bomb';
+ITEM_COLORS[94]='#aa44ff'; ITEM_NAMES[94]='Split';
+const ITEM_COUNT = 15;
 const MAX_LEVEL = 9; // levels 0-9, badge shows level+1 (1-10)
 const SCORE_PER_LEVEL = 100;
 const TABLE_LENGTH = 10;
@@ -169,8 +179,8 @@ const BALANCE = {
   angularDamping: 0, // zero — any spin from wall friction persists forever
   deadlineSeconds: 2.75,
   launchGraceMs: 1500,
-  seedCountMin: 7,
-  seedCountMax: 9,
+  seedCountMin: 14,
+  seedCountMax: 18,
   settleSpeed: 0.18,
   settleAgeMs: 700,
   comboWindowMs: 1800,
@@ -197,8 +207,8 @@ scene.add(new THREE.AmbientLight(0x404060, 0.5));
 const dirLight = new THREE.DirectionalLight(0xffeedd, 1.2);
 dirLight.position.set(10, 20, 10);
 dirLight.castShadow = true;
-dirLight.shadow.mapSize.width = 2048;
-dirLight.shadow.mapSize.height = 2048;
+dirLight.shadow.mapSize.width = 1024;
+dirLight.shadow.mapSize.height = 1024;
 dirLight.shadow.camera.near = 0.5;
 dirLight.shadow.camera.far = 50;
 dirLight.shadow.camera.left = -15;
@@ -218,9 +228,15 @@ scene.add(rimLight);
 // ============================================================
 const world = new CANNON.World();
 world.gravity.set(0, BALANCE.gravityY, 0);
-world.broadphase = new CANNON.NaiveBroadphase();
-world.solver.iterations = 10;
+world.broadphase = new CANNON.SAPBroadphase(world);
+world.solver.iterations = 5;
 const defaultMaterial = new CANNON.Material('default');
+const wallMaterial = new CANNON.Material('wall');
+const flyingMaterial = new CANNON.Material('flying');
+// Default friction against walls (settled items)
+world.addContactMaterial(new CANNON.ContactMaterial(wallMaterial, defaultMaterial, { friction: 0.7 }));
+// Zero friction against walls for thrown items
+world.addContactMaterial(new CANNON.ContactMaterial(wallMaterial, flyingMaterial, { friction: 0 }));
 world.addContactMaterial(new CANNON.ContactMaterial(defaultMaterial, defaultMaterial, {
   friction: BALANCE.friction, restitution: BALANCE.restitution,
 }));
@@ -242,17 +258,29 @@ for (let i = -halfL + 0.5; i < halfL - 0.4; i += 1) {
     new THREE.MeshStandardMaterial({ color: 0x6d4c41, roughness: 0.9, transparent: true, opacity: 0.15 }));
   p.position.set(0, 0.01, i); scene.add(p);
 }
-function addWall(x, z, w, h, d) {
+function addWall(x, z, w, h, d, mat) {
   const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d),
     new THREE.MeshStandardMaterial({ color: 0x3e2723, roughness: 0.8, metalness: 0.2 }));
   m.position.set(x, h/2, z); m.receiveShadow = m.castShadow = true; scene.add(m);
-  const b = new CANNON.Body({ mass: 0, material: defaultMaterial });
+  const b = new CANNON.Body({ mass: 0, material: mat || defaultMaterial });
   b.addShape(new CANNON.Box(new CANNON.Vec3(w/2, h/2, d/2))); b.position.set(x, h/2, z); world.addBody(b);
 }
 const WH = 1.2, WT = 0.2;
 addWall(0, -halfL - WT/2, TABLE_WIDTH + WT*2, WH, WT);
-addWall(-halfW - WT/2, 0, WT, WH, TABLE_LENGTH);
-addWall(halfW + WT/2, 0, WT, WH, TABLE_LENGTH);
+addWall(-halfW - WT/2, 0, WT, WH, TABLE_LENGTH, wallMaterial);
+addWall(halfW + WT/2, 0, WT, WH, TABLE_LENGTH, wallMaterial);
+
+// Invisible bottom wall — keeps items from falling off the front
+const bwBody = new CANNON.Body({ mass: 0, material: defaultMaterial });
+bwBody.addShape(new CANNON.Box(new CANNON.Vec3((TABLE_WIDTH+WT*2)/2, WH/2, WT/2)));
+bwBody.position.set(0, WH/2, halfL + WT/2);
+world.addBody(bwBody);
+
+// Reinforced back wall — thick and tall to stop jump arcs from clearing it
+const rwBody = new CANNON.Body({ mass: 0, material: defaultMaterial });
+rwBody.addShape(new CANNON.Box(new CANNON.Vec3((TABLE_WIDTH+WT*2)/2, 8, WT*2)));
+rwBody.position.set(0, 4, -halfL - WT);
+world.addBody(rwBody);
 
 // Deadline
 const deadlineMat = new THREE.LineBasicMaterial({ color: 0xff3333, transparent: true, opacity: 0.75 });
@@ -276,6 +304,45 @@ trajGeo.setDrawRange(0, 0);
 const trajMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.4 });
 const trajLine = new THREE.Line(trajGeo, trajMat);
 trajLine.visible = false; scene.add(trajLine);
+
+// Jump arc indicator — animated flowing dots
+const jumpArcPoints = 24;
+const jumpPos = new Float32Array(jumpArcPoints * 3);
+const jumpGeo = new THREE.BufferGeometry();
+jumpGeo.setAttribute('position', new THREE.BufferAttribute(jumpPos, 3));
+jumpGeo.setDrawRange(0, 0);
+const jumpMat = new THREE.LineBasicMaterial({ color: 0x00ccff, transparent: true, opacity: 0.6 });
+const jumpLine = new THREE.Line(jumpGeo, jumpMat);
+jumpLine.visible = false; scene.add(jumpLine);
+
+// Jump arc indicator — animated flow dots
+const jumpDotGeo = new THREE.BufferGeometry();
+const jumpDotPos = new Float32Array(jumpArcPoints * 3);
+jumpDotGeo.setAttribute('position', new THREE.BufferAttribute(jumpDotPos, 3));
+const jumpDotOpacity = new Float32Array(jumpArcPoints);
+const jumpDotColor = new Float32Array(jumpArcPoints * 3);
+for (let i = 0; i < jumpArcPoints; i++) {
+  jumpDotColor[i*3] = 0; jumpDotColor[i*3+1] = 0.8; jumpDotColor[i*3+2] = 1;
+}
+jumpDotGeo.setAttribute('color', new THREE.BufferAttribute(jumpDotColor, 3));
+jumpDotGeo.setAttribute('opacity', new THREE.BufferAttribute(jumpDotOpacity, 1));
+const jumpDotMat = new THREE.PointsMaterial({ 
+  color: 0x00ccff, transparent: true, opacity: 0.0, size: 0.06,
+  vertexColors: false, blending: THREE.AdditiveBlending 
+});
+const jumpDots = new THREE.Points(jumpDotGeo, jumpDotMat);
+jumpDots.visible = false; scene.add(jumpDots);
+
+// Arrow meshes along the arc (small cones)
+const jumpArrows = [];
+for (let i = 0; i < 4; i++) {
+  const arrowMat = new THREE.MeshStandardMaterial({ color: 0x00ccff, emissive: 0x00ccff, emissiveIntensity: 0.3, transparent: true, opacity: 0.0 });
+  const arrow = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.08, 6), arrowMat);
+  arrow.rotation.x = -Math.PI / 2;
+  arrow.visible = false;
+  scene.add(arrow);
+  jumpArrows.push(arrow);
+}
 
 // ============================================================
 // ITEM MESH BUILDER (takes item TYPE index, builds shape)
@@ -526,7 +593,7 @@ function buildItemMesh(type) {
     }
     case 5: { // Golf Cart
       const white = new THREE.MeshStandardMaterial({ color: 0xf7f7f2, roughness: 0.44, metalness: 0.02 });
-      const blue = new THREE.MeshStandardMaterial({ color: 0x28a9df, roughness: 0.42, metalness: 0.02 });
+      const blue = new THREE.MeshStandardMaterial({ color: 0x28a9d8, roughness: 0.44, metalness: 0.02 });
       const roof = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.38, metalness: 0.02 });
       const dark = new THREE.MeshStandardMaterial({ color: 0x182026, roughness: 0.72, metalness: 0.0 });
       const tire = new THREE.MeshStandardMaterial({ color: 0x080a0c, roughness: 0.82, metalness: 0.0 });
@@ -733,7 +800,7 @@ function buildItemMesh(type) {
       g.scale.setScalar(1.05);
       break;
     }
-    case 8: { // 1x Beer — angled 45° for top-down view
+    case 8: case 90: { // 1x Beer — angled 45° for top-down view
       const glassMat = new THREE.MeshStandardMaterial({ color: 0xfff5e6, transparent: true, opacity: 0.38, roughness: 0.1, metalness: 0.1, depthWrite: false });
       const liquidMat = new THREE.MeshStandardMaterial({ color: 0xf5a623, transparent: true, opacity: 0.85, roughness: 0.22, metalness: 0.05 });
       const foamMat = new THREE.MeshStandardMaterial({ color: 0xfffdf0, roughness: 0.95, metalness: 0.0 });
@@ -796,7 +863,7 @@ function buildItemMesh(type) {
       add(new THREE.Mesh(new THREE.SphereGeometry(0.016, 12, 12), shineMat), -0.03, 0.35, 0.03, 1, 0.3, 1, 0, 0, 0, mugGroup);
       break;
     }
-    case 9: { // 2x Beer — two glasses side by side, angled 45°
+    case 9: case 91: { // 2x Beer — two glasses side by side, angled 45°
       const glassMat = new THREE.MeshStandardMaterial({ color: 0xfff5e6, transparent: true, opacity: 0.38, roughness: 0.1, metalness: 0.1, depthWrite: false });
       const liquidMat = new THREE.MeshStandardMaterial({ color: 0xf5a623, transparent: true, opacity: 0.85, roughness: 0.22, metalness: 0.05 });
       const foamMat = new THREE.MeshStandardMaterial({ color: 0xfffdf0, roughness: 0.95, metalness: 0.0 });
@@ -867,7 +934,7 @@ function buildItemMesh(type) {
       makeGlass(0.12, 0);
       break;
     }
-    case 10: { // Small Bomb
+    case 10: case 92: { // Small Bomb
       const bm = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.7, metalness: 0.1 });
       const fm = new THREE.MeshStandardMaterial({ color: 0xcc6600, roughness: 0.6, metalness: 0.0 });
       const sg = new THREE.Group();
@@ -886,26 +953,332 @@ function buildItemMesh(type) {
       g.add(sg);
       break;
     }
-    case 11: { // Big Bomb
-      const bm2 = new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.7, metalness: 0.1 });
-      const fm2 = new THREE.MeshStandardMaterial({ color: 0xcc6600, roughness: 0.6, metalness: 0.0 });
-      const bg3 = new THREE.Group();
+    case 11: case 93: { // Big Bomb — two small bombs side by side
+      const bm = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.7, metalness: 0.1 });
+      const fm = new THREE.MeshStandardMaterial({ color: 0xcc6600, roughness: 0.6, metalness: 0.0 });
+      const sparkMat = new THREE.MeshStandardMaterial({ color: 0xff4400, emissive: 0xff2200, emissiveIntensity: 0.5 });
 
-      const body = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), bm2);
-      body.castShadow = true; bg3.add(body);
+      const makeBomb = (xOff) => {
+        const grp = new THREE.Group();
+        grp.position.set(xOff, 0, 0);
+        g.add(grp);
 
-      const fuse = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.08, 6), fm2);
-      fuse.position.set(0, 0.25, 0); fuse.castShadow = true; bg3.add(fuse);
+        const body = new THREE.Mesh(new THREE.SphereGeometry(0.14, 14, 14), bm);
+        body.castShadow = true; grp.add(body);
 
-      const spark = new THREE.Mesh(new THREE.SphereGeometry(0.02, 6, 6),
-        new THREE.MeshStandardMaterial({ color: 0xff4400, emissive: 0xff2200, emissiveIntensity: 0.5 }));
-      spark.position.set(0, 0.29, 0); spark.castShadow = true; bg3.add(spark);
+        const fuse = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.06, 6), fm);
+        fuse.position.set(0, 0.17, 0); fuse.castShadow = true; grp.add(fuse);
 
-      const band = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.025, 8, 14), new THREE.MeshStandardMaterial({ color: 0xcc0000, roughness: 0.5 }));
-      band.position.set(0, -0.05, 0); band.rotation.x = Math.PI/2; band.castShadow = true; bg3.add(band);
+        const spark = new THREE.Mesh(new THREE.SphereGeometry(0.015, 6, 6), sparkMat);
+        spark.position.set(0, 0.2, 0); spark.castShadow = true; grp.add(spark);
 
-      bg3.scale.setScalar(1.1);
-      g.add(bg3);
+        grp.scale.setScalar(1.1);
+      };
+
+      makeBomb(-0.1);
+      makeBomb(0.1);
+      break;
+    }
+    case 94: { // Split — Y-arrow power-down (Gemini model)
+      const arrowMat = new THREE.MeshStandardMaterial({
+        color: 0xd90429, roughness: 0.25, metalness: 0.15
+      });
+      const goldTrimMat = new THREE.MeshStandardMaterial({
+        color: 0xffb703, roughness: 0.2, metalness: 0.8
+      });
+      const energyMat = new THREE.MeshStandardMaterial({
+        color: 0xffd166, transparent: true, opacity: 0.85,
+        roughness: 0.1, metalness: 0.2
+      });
+      const shineMat = new THREE.MeshStandardMaterial({
+        color: 0xffffff, transparent: true, opacity: 0.88, roughness: 0.05
+      });
+      const baseDiscMat = new THREE.MeshStandardMaterial({
+        color: 0x17c3b2, transparent: true, opacity: 0.35, roughness: 0.3
+      });
+      const add = (m, x, y, z, sx = 1, sy = 1, sz = 1, rx = 0, ry = 0, rz = 0, parent = g) => {
+        m.position.set(x, y, z); m.scale.set(sx, sy, sz);
+        m.rotation.set(rx, ry, rz); m.castShadow = true; m.receiveShadow = true;
+        parent.add(m); return m;
+      };
+      // Ground water ripple disc
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.008, 32), baseDiscMat), 0, 0.004, 0);
+      add(new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.006, 8, 32), baseDiscMat),
+        0, 0.008, 0, 1, 1, 1, Math.PI / 2, 0, 0);
+      // Golden pedestal ring
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.15, 0.018, 32), goldTrimMat), 0, 0.015, 0);
+      add(new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.008, 12, 32), energyMat),
+        0, 0.025, 0, 1, 1, 1, Math.PI / 2, 0, 0);
+      // Main Y-split arrow shape
+      const shape = new THREE.Shape();
+      shape.moveTo(-0.035, -0.14);  shape.lineTo(0.035, -0.14);
+      shape.lineTo(0.035, -0.02);   shape.lineTo(0.12, 0.08);
+      shape.lineTo(0.16, 0.07);     shape.lineTo(0.11, 0.18);
+      shape.lineTo(0.05, 0.13);     shape.lineTo(0.0, 0.04);
+      shape.lineTo(-0.05, 0.13);    shape.lineTo(-0.11, 0.18);
+      shape.lineTo(-0.16, 0.07);    shape.lineTo(-0.12, 0.08);
+      shape.lineTo(-0.035, -0.02);  shape.closePath();
+      const extrudeSettings = { steps: 1, depth: 0.045,
+        bevelEnabled: true, bevelThickness: 0.008, bevelSize: 0.006,
+        bevelOffset: 0, bevelSegments: 3
+      };
+      const arrowGeo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+      arrowGeo.center();
+      const arrowMesh = new THREE.Mesh(arrowGeo, arrowMat);
+      const arrowGroup = new THREE.Group();
+      add(arrowGroup, 0, 0.18, -0.01, 1, 1, 1, -Math.PI / 4, 0, 0);
+      add(arrowMesh, 0, 0, 0, 1, 1, 1, 0, 0, 0, arrowGroup);
+      // Gold backplate
+      const bpSettings = { steps: 1, depth: 0.015,
+        bevelEnabled: true, bevelThickness: 0.004, bevelSize: 0.004,
+        bevelOffset: 0, bevelSegments: 2
+      };
+      const bpGeo = new THREE.ExtrudeGeometry(shape, bpSettings);
+      bpGeo.center();
+      add(new THREE.Mesh(bpGeo, goldTrimMat), 0, 0, -0.028, 1.08, 1.08, 1, 0, 0, 0, arrowGroup);
+      // Floating energy orbs
+      const orbs = [{x:-0.11, y:0.22, z:0.02, s:0.018}, {x:0.11, y:0.22, z:0.02, s:0.018}, {x:0, y:0.07, z:0.04, s:0.014}];
+      orbs.forEach(p => {
+        add(new THREE.Mesh(new THREE.SphereGeometry(p.s, 16, 12), energyMat),
+          p.x, p.y, p.z, 1, 1, 1, 0, 0, 0, arrowGroup);
+        add(new THREE.Mesh(new THREE.TorusGeometry(p.s*1.4, 0.002, 8, 16), energyMat),
+          p.x, p.y, p.z, 1, 1, 1, Math.PI/3, 0, 0, arrowGroup);
+      });
+      // Gloss highlights
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.10, 12), shineMat),
+        -0.012, -0.06, 0.028, 1, 0.3, 1, 0, 0, 0, arrowGroup);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.10, 12), shineMat),
+        0.05, 0.04, 0.028, 1, 0.3, 1, 0, 0, -0.6, arrowGroup);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.10, 12), shineMat),
+        -0.05, 0.04, 0.028, 1, 0.3, 1, 0, 0, 0.6, arrowGroup);
+      g.userData.visualScale = 0.65;
+      break;
+    }
+    case 12: { // Florida Alligator
+      const skinMat = new THREE.MeshStandardMaterial({ color: 0x43583c, roughness: 0.85, metalness: 0.1 });
+      const bellyMat = new THREE.MeshStandardMaterial({ color: 0xc1a770, roughness: 0.75, metalness: 0.05 });
+      const scaleRidgeMat = new THREE.MeshStandardMaterial({ color: 0x2e3d2a, roughness: 0.9, metalness: 0.0 });
+      const teethMat = new THREE.MeshStandardMaterial({ color: 0xfffef0, roughness: 0.5, metalness: 0.1 });
+      const eyeMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2, metalness: 0.1 });
+      const pupilMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.9, metalness: 0.0 });
+      const shineMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.88, roughness: 0.01, metalness: 0.0 });
+      const baseDiscMat = new THREE.MeshStandardMaterial({ color: 0x17c3b2, transparent: true, opacity: 0.35, roughness: 0.3 });
+
+      const add = (m, x, y, z, sx = 1, sy = 1, sz = 1, rx = 0, ry = 0, rz = 0, parent = g) => {
+        m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.rotation.set(rx, ry, rz); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m;
+      };
+
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.01, 32), baseDiscMat), 0, 0.005, 0);
+      add(new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.006, 8, 32), baseDiscMat), 0, 0.01, 0, 1, 1, 1, Math.PI / 2, 0, 0);
+
+      const gatorG = new THREE.Group();
+      add(gatorG, 0, 0.12, 0, 1, 1, 1, 0, Math.PI / 4, 0);
+
+      const bodyCore = new THREE.Group(); gatorG.add(bodyCore);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.12, 24, 18), skinMat), 0, 0.04, -0.05, 1.2, 1, 1.8);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.115, 24, 18, 0, Math.PI * 2, Math.PI * 0.5, Math.PI * 0.5), bellyMat), 0, 0.03, -0.05, 1.21, 0.8, 1.81);
+
+      const headG = new THREE.Group();
+      add(headG, 0, 0.10, 0.10, 1, 1, 1, 0, 0, 0, gatorG);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.06, 0.18, 16, 1, true), skinMat), 0, -0.01, 0.08, 1.1, 1, 1, Math.PI / 2, 0, 0, headG);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.06, 0.18, 16), skinMat), 0, 0.015, 0.08, 1.1, 0.1, 1, Math.PI / 2, 0, 0, headG);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.012, 12, 8), skinMat), -0.015, 0.015, 0.16, 1, 0.8, 1, 0, 0, 0, headG);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.012, 12, 8), skinMat), 0.015, 0.015, 0.16, 1, 0.8, 1, 0, 0, 0, headG);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.004, 8, 6), pupilMat), -0.015, 0.022, 0.165, 1, 1, 0.5, 0, 0, 0, headG);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.004, 8, 6), pupilMat), 0.015, 0.022, 0.165, 1, 1, 0.5, 0, 0, 0, headG);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.02, 16, 12), eyeMat), -0.04, 0.03, -0.01, 1, 1, 1, 0.2, 0.5, 0, headG);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.02, 16, 12), eyeMat), 0.04, 0.03, -0.01, 1, 1, 1, 0.2, -0.5, 0, headG);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.008, 12, 8), pupilMat), -0.045, 0.035, 0.008, 1, 1, 0.6, 0.2, 0.5, 0, headG);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.008, 12, 8), pupilMat), 0.045, 0.035, 0.008, 1, 1, 0.6, 0.2, -0.5, 0, headG);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.025, 16, 12), skinMat), -0.04, 0.025, -0.015, 1, 1, 1.2, 0, 0.5, 0, headG);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.025, 16, 12), skinMat), 0.04, 0.025, -0.015, 1, 1, 1.2, 0, -0.5, 0, headG);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.055, 0.16, 16), bellyMat), 0, -0.025, 0.08, 1.05, 0.7, 0.95, Math.PI / 2, 0, 0, headG);
+      add(new THREE.Mesh(new THREE.PlaneGeometry(0.08, 0.14), pupilMat), 0, -0.002, 0.08, 1, 1, 1, -Math.PI / 2, 0, 0, headG);
+
+      for (let i = 0; i < 6; i++) {
+        const z = 0.03 + i * 0.025, taper = 1 - (i / 10);
+        add(new THREE.Mesh(new THREE.ConeGeometry(0.005, 0.02, 8), teethMat), -0.035, -0.008, z, taper, 1, taper, Math.PI, 0, 0.1, headG);
+        add(new THREE.Mesh(new THREE.ConeGeometry(0.005, 0.02, 8), teethMat), 0.035, -0.008, z, taper, 1, taper, Math.PI, 0, -0.1, headG);
+        if (i < 4) {
+          add(new THREE.Mesh(new THREE.ConeGeometry(0.005, 0.018, 8), teethMat), -0.032, -0.018, z + 0.01, taper, 1, taper, 0, 0, -0.1, headG);
+          add(new THREE.Mesh(new THREE.ConeGeometry(0.005, 0.018, 8), teethMat), 0.032, -0.018, z + 0.01, taper, 1, taper, 0, 0, 0.1, headG);
+        }
+      }
+      add(new THREE.Mesh(new THREE.ConeGeometry(0.005, 0.022, 8), teethMat), -0.018, -0.005, 0.165, 1.2, 1, 1.2, Math.PI, 0, 0, headG);
+      add(new THREE.Mesh(new THREE.ConeGeometry(0.005, 0.022, 8), teethMat), 0.018, -0.005, 0.165, 1.2, 1, 1.2, Math.PI, 0, 0, headG);
+      add(new THREE.Mesh(new THREE.ConeGeometry(0.008, 0.03, 8), teethMat), -0.041, -0.015, 0.10, 1, 1, 1, 0, 0, -0.2, headG);
+      add(new THREE.Mesh(new THREE.ConeGeometry(0.008, 0.03, 8), teethMat), 0.041, -0.015, 0.10, 1, 1, 1, 0, 0, 0.2, headG);
+
+      const scutesG = new THREE.Group();
+      add(scutesG, 0, 0.12, -0.05, 1, 1, 1, 0, 0, 0, gatorG);
+      for (let r = 0; r < 4; r++) {
+        const x = (r / 3 - 0.5) * 0.18, lateralTaper = 1 - Math.abs(r / 3 - 0.5);
+        for (let c = 0; c < 9; c++) {
+          const z = (c / 8 - 0.5) * 0.32, centralTaper = Math.sin((c / 8) * Math.PI);
+          const scuteSize = 0.015 * lateralTaper * centralTaper;
+          if (scuteSize < 0.002) continue;
+          add(new THREE.Mesh(new THREE.BoxGeometry(scuteSize, scuteSize, scuteSize), scaleRidgeMat), x, 0, z, 1, 1.2, 1.2, (Math.random()-0.5)*0.2, (Math.random()-0.5)*0.2, (Math.random()-0.5)*0.2, scutesG);
+        }
+      }
+
+      const tailG = new THREE.Group();
+      add(tailG, 0, 0.02, -0.18, 1, 1, 1, 0, 0, 0, gatorG);
+      for (let i = 0; i < 6; i++) {
+        const t = i / 5, taperT = 1 - i / 6, taperB = 1 - (i + 1) / 6, len = 0.08 - t * 0.02;
+        const z = -t * 0.35, x = Math.sin(t * Math.PI * 0.5) * 0.06, ry = -t * Math.PI * 0.25;
+        add(new THREE.Mesh(new THREE.CylinderGeometry(0.09 * taperT, 0.09 * taperB, len, 12, 1, true), skinMat), x, 0, z, 1, 0.7, 1, Math.PI / 2, ry, 0, tailG);
+        if (i < 5 && taperT > 0.2) add(new THREE.Mesh(new THREE.BoxGeometry(0.02 * taperT, 0.02 * taperT, 0.03), scaleRidgeMat), x, 0.05 * taperT, z - len/2, 1, 1, 1, Math.PI / 2, ry, 0, tailG);
+      }
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.015, 8, 6), skinMat), 0.06, 0, -0.37, 1, 0.7, 1.2, 0, -Math.PI/4, 0, tailG);
+
+      const legG = new THREE.Group();
+      add(legG, 0, 0.02, -0.05, 1, 1, 1, 0, 0, 0, gatorG);
+      for (const leg of [{x:-0.15, z:0.08, ry:-Math.PI/8}, {x:0.15, z:0.08, ry:Math.PI/8}, {x:-0.165, z:-0.16, ry:Math.PI/6}, {x:0.165, z:-0.16, ry:-Math.PI/6}]) {
+        const lg = new THREE.Group(); add(lg, leg.x, 0, leg.z, 1, 1, 1, 0, leg.ry, 0, legG);
+        add(new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.06, 12), skinMat), 0, 0, 0, 1, 1, 1, 0, 0, 0, lg);
+        add(new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.01, 12), skinMat), 0, -0.02, 0.01, 1, 1, 1.2, Math.PI/2, 0, 0, lg);
+      }
+
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.01, 12, 12), shineMat), -0.04, 0.038, 0.012, 1, 0.4, 1, 0, 0, 0, headG);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.01, 12, 12), shineMat), 0.04, 0.038, 0.012, 1, 0.4, 1, 0, 0, 0, headG);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.008, 12, 12), shineMat), -0.015, 0.018, 0.165, 1, 0.3, 1, 0, 0, 0, headG);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.008, 12, 12), shineMat), 0.015, 0.018, 0.165, 1, 0.3, 1, 0, 0, 0, headG);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.025, 16, 12), shineMat), 0, 0.15, -0.05, 1.2, 0.2, 1.8, 0, 0, 0, gatorG);
+      break;
+    }
+    case 13: { // Florida Freshwater Turtle
+      const shellMat = new THREE.MeshStandardMaterial({ color: 0x2e3d23, roughness: 0.55, metalness: 0.1 });
+      const shellRimMat = new THREE.MeshStandardMaterial({ color: 0xdd9e36, roughness: 0.6, metalness: 0.05 });
+      const plastronMat = new THREE.MeshStandardMaterial({ color: 0xe8cf8c, roughness: 0.7, metalness: 0.05 });
+      const skinMat = new THREE.MeshStandardMaterial({ color: 0x3b4f2c, roughness: 0.8, metalness: 0.0 });
+      const stripeMat = new THREE.MeshStandardMaterial({ color: 0xf3d242, roughness: 0.7, metalness: 0.0 });
+      const darkMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.9, metalness: 0.0 });
+      const clawMat = new THREE.MeshStandardMaterial({ color: 0xd9c5a0, roughness: 0.4, metalness: 0.1 });
+      const shineMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.85, roughness: 0.05 });
+      const baseDiscMat = new THREE.MeshStandardMaterial({ color: 0x17c3b2, transparent: true, opacity: 0.35, roughness: 0.3 });
+
+      const add = (m, x, y, z, sx = 1, sy = 1, sz = 1, rx = 0, ry = 0, rz = 0, parent = g) => {
+        m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.rotation.set(rx, ry, rz); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m;
+      };
+
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.008, 32), baseDiscMat), 0, 0.004, 0);
+      add(new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.006, 8, 32), baseDiscMat), 0, 0.008, 0, 1, 1, 1, Math.PI / 2, 0, 0);
+
+      const turtleGroup = new THREE.Group();
+      add(turtleGroup, 0, 0.08, 0);
+
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.018, 32), plastronMat), 0, 0.01, 0, 0.95, 1, 1.3, 0, 0, 0, turtleGroup);
+      add(new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.04, 0.18), plastronMat), -0.105, 0.03, 0, 1, 1, 1, 0, 0, 0.2, turtleGroup);
+      add(new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.04, 0.18), plastronMat), 0.105, 0.03, 0, 1, 1, 1, 0, 0, -0.2, turtleGroup);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.14, 32, 24, 0, Math.PI * 2, 0, Math.PI * 0.52), shellMat), 0, 0.02, 0, 1.02, 0.85, 1.3, 0, 0, 0, turtleGroup);
+      add(new THREE.Mesh(new THREE.TorusGeometry(0.138, 0.012, 12, 36), shellRimMat), 0, 0.02, 0, 1.02, 0.4, 1.3, Math.PI / 2, 0, 0, turtleGroup);
+
+      for (let i = -2; i <= 2; i++) {
+        const zPos = i * 0.055, ridgeScale = 1 - Math.abs(i) * 0.18;
+        add(new THREE.Mesh(new THREE.SphereGeometry(0.035, 16, 12), shellMat), 0, 0.125 * ridgeScale, zPos, 1.1, 0.3, 0.9, 0, 0, 0, turtleGroup);
+        add(new THREE.Mesh(new THREE.TorusGeometry(0.036, 0.003, 8, 16, Math.PI), shellRimMat), 0, 0.128 * ridgeScale, zPos, 1.1, 1, 0.9, Math.PI / 2, 0, 0, turtleGroup);
+      }
+      [-0.065, 0.065].forEach(xSide => [-1, 0, 1].forEach(zDir => {
+        const zPos = zDir * 0.055;
+        add(new THREE.Mesh(new THREE.SphereGeometry(0.032, 14, 10), shellMat), xSide, 0.095, zPos, 1, 0.35, 1, 0, 0, xSide > 0 ? -0.3 : 0.3, turtleGroup);
+      }));
+
+      const headGroup = new THREE.Group();
+      add(headGroup, 0, 0.045, 0.13, 1, 1, 1, -Math.PI / 5, 0, 0, turtleGroup);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.042, 0.07, 20), skinMat), 0, 0.025, 0.02, 1, 1, 0.9, Math.PI / 4, 0, 0, headGroup);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.035, 24, 18), skinMat), 0, 0.062, 0.052, 1, 0.85, 1.3, 0.2, 0, 0, headGroup);
+      add(new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.03, 16), skinMat), 0, 0.058, 0.09, 1, 1, 0.8, Math.PI / 2 + 0.2, 0, 0, headGroup);
+
+      const stripeCoords = [
+        { x: 0, y: 0.04, z: 0.03, sx: 0.005, sy: 0.06, sz: 0.005, rz: 0 },
+        { x: -0.022, y: 0.04, z: 0.03, sx: 0.004, sy: 0.06, sz: 0.004, rz: -0.2 },
+        { x: 0.022, y: 0.04, z: 0.03, sx: 0.004, sy: 0.06, sz: 0.004, rz: 0.2 },
+        { x: -0.028, y: 0.06, z: 0.055, sx: 0.004, sy: 0.035, sz: 0.004, rz: -0.4 },
+        { x: 0.028, y: 0.06, z: 0.055, sx: 0.004, sy: 0.035, sz: 0.004, rz: 0.4 }
+      ];
+      stripeCoords.forEach(s => add(new THREE.Mesh(new THREE.CylinderGeometry(s.sx, s.sx, s.sy, 8), stripeMat), s.x, s.y, s.z, 1, 1, 1, Math.PI / 4, 0, s.rz, headGroup));
+
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.009, 12, 12), darkMat), -0.026, 0.068, 0.068, 1, 1, 0.6, 0, -0.4, 0, headGroup);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.009, 12, 12), darkMat), 0.026, 0.068, 0.068, 1, 1, 0.6, 0, 0.4, 0, headGroup);
+
+      const legPositions = [
+        { x: -0.11, z: 0.10, ry: Math.PI / 4 }, { x: 0.11, z: 0.10, ry: -Math.PI / 4 },
+        { x: -0.11, z: -0.09, ry: Math.PI * 3 / 4 }, { x: 0.11, z: -0.09, ry: -Math.PI * 3 / 4 }
+      ];
+      legPositions.forEach(pos => {
+        const legG = new THREE.Group(); add(legG, pos.x, 0.01, pos.z, 1, 1, 1, 0, pos.ry, 0, turtleGroup);
+        add(new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.032, 0.06, 16), skinMat), 0, 0, 0, 1, 1, 1, Math.PI / 3, 0, 0, legG);
+        add(new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.05, 8), stripeMat), 0, 0.01, 0, 1, 1, 1, Math.PI / 3, 0, 0, legG);
+        add(new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.045, 16), skinMat), 0, -0.01, 0.035, 1.2, 0.25, 1, Math.PI / 2, 0, 0, legG);
+        [-0.015, 0, 0.015].forEach(cX => add(new THREE.Mesh(new THREE.ConeGeometry(0.004, 0.015, 8), clawMat), cX, -0.01, 0.058, 1, 1, 1, Math.PI / 2, 0, cX * 8, legG));
+      });
+
+      add(new THREE.Mesh(new THREE.ConeGeometry(0.016, 0.07, 16), skinMat), 0, 0.015, -0.15, 1, 0.6, 1, -Math.PI / 2.3, 0, 0, turtleGroup);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.002, 0.06, 8), stripeMat), 0, 0.02, -0.15, 1, 1, 1, -Math.PI / 2.3, 0, 0, turtleGroup);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.022, 12, 12), shineMat), -0.02, 0.145, -0.01, 1, 0.3, 1, 0, 0, 0, turtleGroup);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.009, 12, 12), shineMat), 0, 0.072, 0.08, 1, 0.4, 1, 0, 0, 0, headGroup);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.004, 8, 8), shineMat), -0.028, 0.072, 0.072, 1, 1, 1, 0, 0, 0, headGroup);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.004, 8, 8), shineMat), 0.028, 0.072, 0.072, 1, 1, 1, 0, 0, 0, headGroup);
+      break;
+    }
+    case 14: { // Margarita Drink
+      const glassMat = new THREE.MeshStandardMaterial({ color: 0xe6f7ff, transparent: true, opacity: 0.38, roughness: 0.08, metalness: 0.1, depthWrite: false });
+      const liquidMat = new THREE.MeshStandardMaterial({ color: 0xc4ec74, transparent: true, opacity: 0.85, roughness: 0.2, metalness: 0.05 });
+      const saltMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95, metalness: 0.0 });
+      const limeRindMat = new THREE.MeshStandardMaterial({ color: 0x388e3c, roughness: 0.6, metalness: 0.05 });
+      const limePulpMat = new THREE.MeshStandardMaterial({ color: 0x8bc34a, roughness: 0.4, metalness: 0.0 });
+      const iceMat = new THREE.MeshStandardMaterial({ color: 0xf0fbff, transparent: true, opacity: 0.65, roughness: 0.1, metalness: 0.1 });
+      const strawMat = new THREE.MeshStandardMaterial({ color: 0xff4081, roughness: 0.3, metalness: 0.1 });
+      const shineMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.88, roughness: 0.05 });
+      const baseDiscMat = new THREE.MeshStandardMaterial({ color: 0x17c3b2, transparent: true, opacity: 0.35, roughness: 0.3 });
+
+      const add = (m, x, y, z, sx = 1, sy = 1, sz = 1, rx = 0, ry = 0, rz = 0, parent = g) => {
+        m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.rotation.set(rx, ry, rz); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m;
+      };
+
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.008, 32), baseDiscMat), 0, 0.004, 0);
+      add(new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.006, 8, 32), baseDiscMat), 0, 0.008, 0, 1, 1, 1, Math.PI / 2, 0, 0);
+
+      // Sub-group angled -45° around X to face the overhead camera
+      const drinkGroup = new THREE.Group();
+      drinkGroup.position.set(0, 0.18, -0.01);
+      drinkGroup.rotation.set(-Math.PI / 4, 0, 0);
+      g.add(drinkGroup);
+
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.095, 0.015, 32), glassMat), 0, 0.015, 0, 1, 1, 1, 0, 0, 0, drinkGroup);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.014, 0.10, 24), glassMat), 0, 0.07, 0, 1, 1, 1, 0, 0, 0, drinkGroup);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.018, 16, 12), glassMat), 0, 0.118, 0, 1, 0.6, 1, 0, 0, 0, drinkGroup);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.018, 0.055, 32), glassMat), 0, 0.148, 0, 1, 1, 1, 0, 0, 0, drinkGroup);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.075, 0.07, 32, 1, true), glassMat), 0, 0.21, 0, 1, 1, 1, 0, 0, 0, drinkGroup);
+      add(new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.008, 12, 36), glassMat), 0, 0.245, 0, 1, 1, 1, Math.PI / 2, 0, 0, drinkGroup);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.015, 0.05, 32), liquidMat), 0, 0.148, 0, 1, 1, 1, 0, 0, 0, drinkGroup);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.07, 0.06, 32), liquidMat), 0, 0.202, 0, 1, 1, 1, 0, 0, 0, drinkGroup);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.004, 32), liquidMat), 0, 0.232, 0, 1, 1, 1, 0, 0, 0, drinkGroup);
+      add(new THREE.Mesh(new THREE.TorusGeometry(0.151, 0.007, 8, 36), saltMat), 0, 0.246, 0, 1, 1, 1, Math.PI / 2, 0, 0, drinkGroup);
+
+      for (let i = 0; i < 28; i++) {
+        const angle = (i / 28) * Math.PI * 2, radius = 0.151 + (Math.random()-0.5)*0.006;
+        add(new THREE.Mesh(new THREE.BoxGeometry(0.008,0.008,0.008), saltMat), Math.cos(angle)*radius, 0.247+(Math.random()-0.5)*0.004, Math.sin(angle)*radius, 1,1,1, Math.random()*Math.PI, Math.random()*Math.PI, 0, drinkGroup);
+      }
+
+      add(new THREE.Mesh(new THREE.BoxGeometry(0.045,0.045,0.045), iceMat), -0.04,0.225,0.03, 1,1,1, 0.2,0.5,0.1, drinkGroup);
+      add(new THREE.Mesh(new THREE.BoxGeometry(0.04,0.04,0.04), iceMat), 0.03,0.228,-0.02, 1,1,1, -0.3,0.8,-0.2, drinkGroup);
+      add(new THREE.Mesh(new THREE.BoxGeometry(0.035,0.035,0.035), iceMat), 0.01,0.222,0.05, 1,1,1, 0.4,-0.2,0.3, drinkGroup);
+
+      const limeGroup = new THREE.Group();
+      add(limeGroup, 0.12, 0.255, 0.05, 1, 1, 1, 0.2, -0.4, 0.3, drinkGroup);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.052,0.052,0.008,24), limeRindMat), 0,0,0, 1,1,1, Math.PI/2,0,0, limeGroup);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.046,0.046,0.009,24), limePulpMat), 0,0,0, 1,1,1, Math.PI/2,0,0, limeGroup);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.01,0.01,0.01,12), saltMat), 0,0,0, 1,1,1, Math.PI/2,0,0, limeGroup);
+      for (let i = 0; i < 6; i++) add(new THREE.Mesh(new THREE.BoxGeometry(0.003,0.038,0.01), saltMat), 0,0,0, 1,1,1, 0,0,(i/6)*Math.PI*2, limeGroup);
+
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.008,0.008,0.16,16), strawMat), -0.03,0.22,-0.02, 1,1,1, 0.25,0,-0.3, drinkGroup);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.008,12,12), strawMat), -0.062,0.29,-0.04, 1,1,1, 0,0,0, drinkGroup);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.008,0.008,0.08,16), strawMat), -0.092,0.312,-0.052, 1,1,1, 0.1,0,-1.1, drinkGroup);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.005,0.003,0.07,12), shineMat), -0.08,0.21,0.08, 1,1,1, 0.15,0,-0.4, drinkGroup);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.012,12,12), shineMat), -0.05,0.02,0.05, 1,0.3,1, 0,0,0, drinkGroup);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.006,12,12), shineMat), -0.01,0.07,0.01, 1,1,1, 0,0,0, drinkGroup);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.014,12,12), shineMat), -0.05,0.234,0.06, 1,0.2,1, 0,0,0, drinkGroup);
       break;
     }
   }
@@ -915,8 +1288,8 @@ function buildItemMesh(type) {
 function configureBody(body, radius) {
   body.linearDamping = BALANCE.linearDamping;
   body.angularDamping = BALANCE.angularDamping;
-  body.sleepSpeedLimit = 0.12;
-  body.sleepTimeLimit = 0.6;
+  body.sleepSpeedLimit = 0.15;
+  body.sleepTimeLimit = 0.3;
   body.addShape(new CANNON.Sphere(radius));
 }
 
@@ -943,20 +1316,24 @@ let lastTime = 0;
 // ============================================================
 function randomType() {
   const r = Math.random();
-  // Normal items 0-7 with decreasing probability
-  if (r < 0.18) return 0; // Golf Ball
-  if (r < 0.33) return 1; // Snorkel Mask
-  if (r < 0.46) return 2; // Snorkel Fins
-  if (r < 0.56) return 3; // Shrimp
-  if (r < 0.64) return 4; // Grouper Fish
+  // Normal items 0-11 make up ~95%
+  if (r < 0.19) return 0; // Golf Ball
+  if (r < 0.34) return 1; // Snorkel Mask
+  if (r < 0.47) return 2; // Snorkel Fins
+  if (r < 0.57) return 3; // Shrimp
+  if (r < 0.65) return 4; // Grouper Fish
   if (r < 0.71) return 5; // Golf Cart
-  if (r < 0.77) return 6; // Palm Tree
-  if (r < 0.82) return 7; // Pink Flamingo
-  // Power-ups — rare
-  if (r < 0.86) return 8; // 1x Beer
-  if (r < 0.90) return 9; // 2x Beer
-  if (r < 0.95) return 10; // Small Bomb
-  return 11;               // Big Bomb
+  if (r < 0.76) return 6; // Palm Tree
+  if (r < 0.80) return 7; // Pink Flamingo
+  if (r < 0.85) return 12; // Alligator (5%)
+  if (r < 0.90) return 13; // Turtle (5%)
+  if (r < 0.95) return 14; // Margarita (5%)
+  // Power-ups ~5%
+  if (r < 0.97) return 90;  // 1x Beer (2%)
+  if (r < 0.975) return 91; // 2x Beer (0.5%)
+  if (r < 0.995) return 92; // Small Bomb (2%)
+  if (r < 0.998) return 93; // Big Bomb (0.3%)
+  return 94; // Split (0.2%)
 }
 
 function fillQueue() { while (queue.length < MAX_QUEUE) queue.push(randomType()); updatePreview(); }
@@ -968,8 +1345,7 @@ function popQueue() { const t = queue.shift(); fillQueue(); return t; }
 function initBoard() {
   const count = BALANCE.seedCountMin + Math.floor(Math.random() * (BALANCE.seedCountMax - BALANCE.seedCountMin + 1));
   for (let i = 0; i < count; i++) {
-    const r = Math.random();
-    const type = r < 0.4 ? 0 : r < 0.7 ? 1 : r < 0.9 ? 2 : 3;
+    const type = randomType(); // same distribution as the spawn queue
     const level = 1; // all seeded items are level 1
     const z = -3 + (i / count) * 4;
     const x = (Math.random() - 0.5) * (TABLE_WIDTH - 1.4);
@@ -986,7 +1362,7 @@ function initBoard() {
     configureBody(body, radius);
     world.addBody(body);
 
-    const item = { type, level, mesh, body, launched: true, _launchTime: Date.now(), _boardSeed: true };
+    const item = { type, level, mesh, body, launched: true, _launchTime: Date.now(), _boardSeed: true, _pastDeadline: true };
     itemBodies.set(body, { type, level, mesh });
     allItems.push(item);
   }
@@ -1005,7 +1381,7 @@ function createLauncherItem() {
   mesh.scale.set(sf * (mesh.userData.visualScale||1), sf * (mesh.userData.visualScale||1), sf * (mesh.userData.visualScale||1));
   mesh.position.set(0, radius, LAUNCHER_Z); scene.add(mesh);
 
-  const body = new CANNON.Body({ mass: 1, material: defaultMaterial });
+  const body = new CANNON.Body({ mass: 0, material: defaultMaterial });
   body.position.set(0, radius, LAUNCHER_Z);
   configureBody(body, radius);
   world.addBody(body);
@@ -1023,13 +1399,23 @@ function launchItem() {
   if (!activeItem || activeItem.launched) return;
   activeItem.launched = true;
   activeItem._launchTime = performance.now();
+  activeItem.body.mass = 1;
+  activeItem.body.updateMassProperties();
+  activeItem.body.type = CANNON.Body.DYNAMIC;
+  activeItem.body.material = flyingMaterial;
+  activeItem.body.wakeUp();
+  if (jumpActive) activeItem._jumpActive = true;
+  jumpActive = false;
 
   const body = activeItem.body;
   body.velocity.set(0, 0, 0);
   body.angularVelocity.set(0, 0, 0);
   const aimNorm = body.position.x / (halfW - 0.6);
   const sideImpulse = aimNorm * BALANCE.sideImpulseMax;
-  body.applyImpulse(new CANNON.Vec3(sideImpulse, BALANCE.launchYImpulse, BALANCE.launchZImpulse), body.position);
+  // Jump mode: slower throw so item approaches the board gently
+  const zImp = activeItem._jumpActive ? -8 : BALANCE.launchZImpulse;
+  const yImp = activeItem._jumpActive ? 2.0 : BALANCE.launchYImpulse;
+  body.applyImpulse(new CANNON.Vec3(sideImpulse, yImp, zImp), body.position);
 
   playSound('launch');
   activeItem = null;
@@ -1069,6 +1455,46 @@ function updateAimGuide() {
     trajLine.geometry.setDrawRange(0, count);
   }
   trajLine.computeLineDistances();
+  // Jump mode indicator: cyan arc above the trajectory
+  // Jump mode indicator: animated cyan arc with flowing arrows
+  if (jumpActive && activeItem) {
+    jumpLine.visible = true;
+    jumpDots.visible = true;
+    jumpArrows.forEach(a => a.visible = true);
+    const x = activeItem.body.position.x;
+    const startZ = LAUNCHER_Z - 0.2;
+    const endZ = isPortrait() ? -3.5 : trajPos[(Math.min(trajGeo.drawRange.count, TRAJ_POINTS) - 1) * 3 + 2];
+    const arcHeight = 0.6;
+    for (let i = 0; i < jumpArcPoints; i++) {
+      const t = i / (jumpArcPoints - 1);
+      const z = startZ + (endZ - startZ) * t;
+      const y = Math.sin(t * Math.PI) * arcHeight;
+      jumpPos[i*3] = x; jumpPos[i*3+1] = y + 0.3; jumpPos[i*3+2] = z;
+      jumpDotPos[i*3] = x; jumpDotPos[i*3+1] = y + 0.35; jumpDotPos[i*3+2] = z;
+      // Animate dot opacity — flowing wave
+      jumpDotOpacity[i] = 0.3 + 0.7 * (Math.sin(performance.now() * 0.005 - t * Math.PI * 3) * 0.5 + 0.5);
+    }
+    jumpGeo.attributes.position.needsUpdate = true;
+    jumpGeo.setDrawRange(0, jumpArcPoints);
+    jumpDotGeo.attributes.position.needsUpdate = true;
+    jumpDotGeo.setDrawRange(0, jumpArcPoints);
+    jumpDotMat.opacity = 1;
+
+    // Position arrows along the arc
+    const arrowT = [0.15, 0.35, 0.55, 0.75];
+    arrowT.forEach((t, idx) => {
+      const z = startZ + (endZ - startZ) * t;
+      const y = Math.sin(t * Math.PI) * arcHeight;
+      jumpArrows[idx].position.set(x, y + 0.35, z);
+      jumpArrows[idx].rotation.z = -Math.PI / 4 + t * Math.PI / 2; // point along arc
+      jumpArrows[idx].material.opacity = 0.5 + 0.5 * Math.sin(performance.now() * 0.003 + idx);
+      jumpArrows[idx].visible = true;
+    });
+  } else {
+    jumpLine.visible = false;
+    jumpDots.visible = false;
+    jumpArrows.forEach(a => { a.visible = false; a.material.opacity = 0; });
+  }
 }
 
 // ============================================================
@@ -1077,7 +1503,7 @@ function updateAimGuide() {
 function checkMerge(collision) {
   const b1 = collision.bi, b2 = collision.bj;
   const d1 = itemBodies.get(b1), d2 = itemBodies.get(b2);
-  if (!d1 || !d2 || d1.type !== d2.type || d1.type >= 8) return;
+  if (!d1 || !d2 || d1.type !== d2.type || d1.type >= 90) return;
   // Allow merging at any level including max (beyond max = disappearance)
 
   const mid = new THREE.Vector3(
@@ -1138,7 +1564,7 @@ function spawnMergedItem(type, level, position) {
   world.addBody(body);
 
   // _firstHit set so badge shows immediately — merge check only uses thrown item's flag
-  const item = { type, level, mesh, body, launched: true, _firstHit: true, _launchTime: performance.now() };
+  const item = { type, level, mesh, body, launched: true, _firstHit: true, _launchTime: performance.now(), _pastDeadline: true };
   itemBodies.set(body, { type, level, mesh });
   allItems.push(item);
 }
@@ -1242,19 +1668,29 @@ function removeBadge(body) {
 function updateLevelBadges() {
   for (const item of allItems) {
     if (item === activeItem) continue;
-    if (item.type >= 8) continue; // power-ups have no level badge
+    if (item.type >= 90) continue; // power-ups have no level badge
     // Hide badge on items still in flight (moving fast, haven't hit anything)
     if (item.launched && !item._firstHit && !item._boardSeed) {
       const spd = item.body.velocity.length();
       if (spd > 0.3) continue;
     }
     const el = getOrCreateBadge(item);
+    // Skip 3D→screen projection for settled items that are still asleep
+    if (item._settled && item._badgeScreenPos && item.body.sleepState === 2) {
+      el.style.left = item._badgeScreenPos.lx;
+      el.style.top = item._badgeScreenPos.ly;
+      el.style.display = 'flex';
+      continue;
+    }
     const pos = item.mesh.position.clone();
     pos.y += getLevelRadius(item.level) + 0.3;
     const vec = pos.clone().project(camera);
-    el.style.left = `${(vec.x*0.5+0.5)*window.innerWidth}px`;
-    el.style.top = `${(-vec.y*0.5+0.5)*window.innerHeight}px`;
+    const lx = `${(vec.x*0.5+0.5)*window.innerWidth}px`;
+    const ly = `${(-vec.y*0.5+0.5)*window.innerHeight}px`;
+    el.style.left = lx;
+    el.style.top = ly;
     el.style.display = 'flex';
+    if (item._settled) item._badgeScreenPos = { lx, ly };
   }
 }
 
@@ -1270,7 +1706,7 @@ function handleBeerHit(beerItem, targetItem) {
   if (beerItem._beerHitBodies.has(targetItem.body)) return;
   beerItem._beerHitBodies.add(targetItem.body);
 
-  const isDouble = beerItem.type === 9; // 2x Beer
+  const isDouble = beerItem.type === 91; // 2x Beer
   const mid = targetItem.mesh.position.clone();
 
   // Spawn a glow flash
@@ -1454,7 +1890,34 @@ function handleBombHit(bombItem, collisionPoint, explosionRadius) {
   });
 }
 
-// Power-up animation loop (called in main animate)
+function handleSplitHit(splitItem, targetItem) {
+  if (!splitItem || !targetItem) return;
+  const pos = targetItem.mesh.position.clone();
+  const targetType = targetItem.type;
+  const targetLevel = targetItem.level;
+  const count = Math.max(2, targetLevel + 1); // badge 1→2, badge 2→2, badge 3→3, badge 8→8
+
+  // Remove the split item
+  removeItem(splitItem.body);
+
+  // Remove the target item
+  removeItem(targetItem.body);
+
+  // Spawn N level-1 copies in a circle around the target position
+  for (let i = 0; i < count; i++) {
+    const angle = (i / count) * Math.PI * 2;
+    const dist = 0.3 + Math.random() * 0.25;
+    const spawnPos = pos.clone();
+    spawnPos.x += Math.cos(angle) * dist;
+    spawnPos.z += Math.sin(angle) * dist;
+    spawnMergedItem(targetType, 0, spawnPos);
+  }
+
+  // Purple flash
+  spawnMergeParticles(pos, 0xaa44ff);
+  createScorePopup(pos, `✂️ Split! x${count}`);
+  playSound('launch');
+}
 function updatePowerUpAnims() {
   const now = performance.now();
   for (let i = powerUpAnims.length - 1; i >= 0; i--) {
@@ -1473,6 +1936,7 @@ function updateSettleFeedback() {
     const age = now - (item._launchTime || 0);
     if (age > BALANCE.settleAgeMs && v < BALANCE.settleSpeed) {
       item._settled = true;
+      item.body.material = defaultMaterial; // restore normal wall friction
       const os = item.mesh.scale.clone();
       const st = performance.now();
       (function pulse() { const t = Math.min((performance.now()-st)/350,1); item.mesh.scale.copy(os).multiplyScalar(1+Math.sin(t*Math.PI)*0.12); if(t<1)requestAnimationFrame(pulse); else item.mesh.scale.copy(os); })();
@@ -1491,7 +1955,11 @@ function checkProximityMerges() {
   for (let i = 0; i < allItems.length; i++) {
     for (let j = i + 1; j < allItems.length; j++) {
       const a = allItems[i], b = allItems[j];
-      if (a.type !== b.type && a.type < 8 && b.type < 8) continue;
+      if (a.type !== b.type && a.type < 90 && b.type < 90) continue;
+      // Both settled — they already passed their merge window
+      if (a._settled && b._settled) continue;
+      // Skip if either item is the unthrown launcher item — never merge/preview
+      if (a === activeItem || b === activeItem) continue;
       const speedA = a.body.velocity.length(), speedB = b.body.velocity.length();
       if (speedA < 0.08 && speedB < 0.08) continue;
       // Determine which item is the thrown one (higher velocity)
@@ -1504,30 +1972,27 @@ function checkProximityMerges() {
       const dz = a.body.position.z - b.body.position.z;
       const dist = Math.sqrt(dx*dx+dy*dy+dz*dz);
       const limit = (getLevelRadius(a.level) + getLevelRadius(b.level)) * MERGE_PROX;
-      if (dist <= limit) {
-        thrown._firstHit = true; // only mark the thrown item
 
-        // POWER-UP: beer/bomb hit any item regardless of type
-        if (thrown.type >= 8) {
-          if (thrown.type === 8 || thrown.type === 9) {
-            // Beer — grow the hit item to max and vanish
-            handleBeerHit(thrown, boardItem);
-          } else {
-            // Bomb — blow up items in radius
-            const radius = (thrown.type === 10) ? 1.5 : 3.0;
-            const mid = new THREE.Vector3(
-              (a.body.position.x + b.body.position.x) / 2,
-              Math.max((a.body.position.y + b.body.position.y) / 2, 0.2),
-              (a.body.position.z + b.body.position.z) / 2
-            );
-            handleBombHit(thrown, mid, radius);
-          }
+      if (dist <= limit) {
+        // POWER-UP: beer/bomb hit any item regardless of type (types 90+)
+        if (thrown.type >= 90) {
+          if (thrown === boardItem || boardItem === activeItem) return;
+          if (thrown.type === 90 || thrown.type === 91) { handleBeerHit(thrown, boardItem); return; }
+          if (thrown.type === 94) { handleSplitHit(thrown, boardItem); return; }
+          const radius = (thrown.type === 92) ? 1.5 : 3.0;
+          const mid = new THREE.Vector3(
+            (a.body.position.x + b.body.position.x) / 2,
+            Math.max((a.body.position.y + b.body.position.y) / 2, 0.2),
+            (a.body.position.z + b.body.position.z) / 2
+          );
+          handleBombHit(thrown, mid, radius);
           return;
         }
 
-        if (itemBodies.has(a.body) && itemBodies.has(b.body) && a.type === b.type) {
-          checkMerge({ bi: a.body, bj: b.body });
-        }
+        // Normal merge: same types merge (jump never overrides same-type merge)
+        if (a.type === b.type) { checkMerge({ bi: a.body, bj: b.body }); return; }
+
+        thrown._firstHit = true; // only mark the thrown item for non-jump diff-type
         return;
       }
     }
@@ -1535,12 +2000,10 @@ function checkProximityMerges() {
 }
 
 // ============================================================
-// DEADLINE
-// ============================================================
+// DEADLINE — visual only, no game over (endless game)
 function checkDeadline() {
   if (!gameRunning) return;
   const now = performance.now();
-  let worst = 0;
   for (const item of allItems) {
     if (!item.launched || item._boardSeed) continue;
     if (item._launchTime && now - item._launchTime < BALANCE.launchGraceMs) continue;
@@ -1548,16 +2011,12 @@ function checkDeadline() {
     if (speed < 0.15 && pz > DEADLINE_Z && pz < LAUNCHER_Z + 0.5) {
       item._deadlineEntry = item._deadlineEntry || now;
       const elapsed = (now - item._deadlineEntry) / 1000;
-      worst = Math.max(worst, Math.min(1, elapsed / BALANCE.deadlineSeconds));
-      if (elapsed >= BALANCE.deadlineSeconds) { endGame(); return; }
+      // Visual pulse only — no game over, items bounce off the invisible bottom wall
     } else item._deadlineEntry = null;
   }
-  if (worst <= 0) { deadlineMat.color.set(0xff3333); deadlineMat.opacity = 0.75; }
-  else {
-    const pulse = 0.5 + Math.sin(now * 0.02) * 0.5;
-    deadlineMat.color.set(worst > 0.65 ? 0xff0000 : 0xffaa00);
-    deadlineMat.opacity = 0.75 + pulse * 0.25;
-  }
+  // Deadline is purely visual — stays a subtle indicator
+  deadlineMat.color.set(0xff3333);
+  deadlineMat.opacity = 0.4;
 }
 
 // ============================================================
@@ -1646,9 +2105,9 @@ function playSound(name) {
 // GOALS
 // ============================================================
 const GOALS = [
-  { type: 'maxed', target: 1, desc: 'Max out 1 item (merge to 11)' },
-  { type: 'maxed', target: 2, desc: 'Max out 2 items' },
-  { type: 'maxed', target: 3, desc: 'Max out 3 items 🏆' },
+  { type: 'maxed', target: 3, desc: 'Complete 3 items (merge to max)' },
+  { type: 'maxed', target: 6, desc: 'Complete 6 items' },
+  { type: 'maxed', target: 9, desc: 'Complete 9 items 🏆' },
 ];
 
 function generateGoal() {
@@ -1775,21 +2234,31 @@ function restartGame() {
 // ============================================================
 // INPUT
 // ============================================================
-let isDragging = false, dragStartX = 0, dragStartItemX = 0;
+let isDragging = false, dragStartX = 0, dragStartItemX = 0, dragStartY = 0, jumpActive = false;
 function getPX(e) { return e.touches ? e.touches[0].clientX : e.clientX; }
+function getPY(e) { return e.touches ? e.touches[0].clientY : e.clientY; }
 function onPointerDown(e) {
   initAudio(); resumeAudio();
   if (!gameRunning || !activeItem || activeItem.launched) return;
-  isDragging = true; dragStartX = getPX(e); dragStartItemX = activeItem.body.position.x;
+  isDragging = true; dragStartX = getPX(e); dragStartItemX = activeItem.body.position.x; dragStartY = getPY(e); jumpActive = false;
 }
 function onPointerMove(e) {
   if (!isDragging || !activeItem || activeItem.launched) return;
   e.preventDefault();
-  const px = getPX(e), rect = renderer.domElement.getBoundingClientRect();
-  const dx = ((px - dragStartX) / rect.width) * (TABLE_WIDTH - 0.8);
+  const px = getPX(e), bpw = getBoardPixelWidth();
+  const dx = ((px - dragStartX) / bpw) * (TABLE_WIDTH - 0.8);
   let newX = Math.max(-halfW + 0.6, Math.min(halfW - 0.6, dragStartItemX + dx));
   activeItem.body.position.x = newX; activeItem.mesh.position.x = newX;
   updateAimGuide();
+
+  // Vertical drag: swipe up = activate jump (needs a clear upward swipe), back down = deactivate
+  const dy = dragStartY - getPY(e);
+  if (dy > 80 && !jumpActive) {
+    jumpActive = true;
+    playSound('launch');
+  } else if (dy < 20 && jumpActive) {
+    jumpActive = false;
+  }
 }
 function onPointerUp(e) {
   if (!isDragging) return;
@@ -1820,6 +2289,17 @@ function updateCameraForViewport() {
 function onResize() { updateCameraForViewport(); renderer.setSize(window.innerWidth, window.innerHeight); }
 window.addEventListener('resize', onResize);
 
+// Board's visible pixel width on screen — used so touch/mouse input maps 1:1
+// to the board's visual area instead of the full canvas width
+function getBoardPixelWidth() {
+  const left = new THREE.Vector3(-halfW, 0, 0);
+  const right = new THREE.Vector3(halfW, 0, 0);
+  left.project(camera);
+  right.project(camera);
+  const rect = renderer.domElement.getBoundingClientRect();
+  return Math.abs(right.x - left.x) / 2 * rect.width;
+}
+
 // ============================================================
 // MAIN LOOP
 // ============================================================
@@ -1830,10 +2310,94 @@ function animate() {
   const dt = Math.min((now - lastTime) / 1000, 0.033);
   lastTime = now;
 
+  // JUMP CHECK: ray-cast along the thrown item's velocity direction to find the
+  // first obstacle truly in its path — not just the nearest in a wide corridor
+  if (gameRunning) {
+    for (const item of allItems) {
+      if (!item._jumpActive || !item.launched || item._firstHit) continue;
+      const jx = item.body.position.x;
+      const jz = item.body.position.z;
+      const vx = item.body.velocity.x;
+      const vz = item.body.velocity.z;
+      if (vz >= -0.5) continue; // must be moving forward (negative Z)
+
+      // Normalize velocity to get the trajectory direction
+      const speed = Math.sqrt(vx * vx + vz * vz);
+      if (speed < 0.01) continue;
+      const dirX = vx / speed;
+      const dirZ = vz / speed;
+
+      // Ray-cast: find the first obstacle whose bounding circle the trajectory ray passes through
+      let nearestObs = null, nearestT = Infinity;
+      for (const obs of allItems) {
+        if (obs === item || obs === activeItem || obs._jumpActive) continue;
+
+        // Vector from thrown item to obstacle center
+        const rx = obs.body.position.x - jx;
+        const rz = obs.body.position.z - jz;
+
+        // Project obstacle center onto ray direction — must be ahead (t > 0)
+        const t = rx * dirX + rz * dirZ;
+        if (t <= 0) continue;
+
+        // Perpendicular distance from obstacle center to the ray
+        const perpDist = Math.abs(rx * (-dirZ) + rz * dirX);
+
+        // Hit radius = just the thrown item's own width (narrow ray, not a corridor)
+        const hitRadius = getLevelRadius(item.level) + 0.1;
+
+        if (perpDist < hitRadius && t < nearestT) {
+          nearestT = t;
+          nearestObs = obs;
+        }
+      }
+
+      // Jump if the nearest obstacle is within reachable range
+      if (nearestObs && nearestT < 2.5) {
+        item._jumpActive = false;
+        const obs = nearestObs;
+        const obsR = getLevelRadius(obs.level);
+        const itemR = getLevelRadius(item.level);
+
+        // How high the arc must peak to clear the obstacle + thrown item
+        const requiredPeak = obsR * 4 + itemR + 0.15;
+        const G = Math.abs(BALANCE.gravityY);
+        // Air time from peak height: peak = ⅛ · g · t²
+        const airTime = Math.min(Math.max(Math.sqrt(requiredPeak / (0.125 * G)), 0.6), 1.8);
+
+        // Upward velocity to return to table level after airTime
+        const vy = 0.5 * G * airTime;
+
+        // Landing position: just behind the obstacle
+        const landZ = obs.body.position.z - obsR - itemR - 0.3;
+        const jumpZ = item.body.position.z;
+        const forwardDist = Math.max(jumpZ - landZ, 0.5);
+
+        // Forward velocity to cover the exact distance in airTime
+        const vzJump = -(forwardDist / airTime) * 1.8;
+
+        const vyBoosted = Math.max(vy, 5.0);
+
+        item.body.velocity.set(
+          item.body.velocity.x * 0.3,
+          vyBoosted,
+          vzJump
+        );
+        item.body.wakeUp();
+        item._jumpLanded = false; // track landing for impact scatter
+        spawnMergeParticles(item.mesh.position.clone(), 0x00ccff);
+        playSound('launch');
+        break; // one jump per frame
+      }
+    }
+  }
+
   world.step(1/60, dt, 3);
 
   for (const [body, data] of itemBodies) {
     data.mesh.position.copy(body.position);
+    // Skip expensive quaternion→euler math for sleeping bodies (settled items)
+    if (body.sleepState === 2) continue;
     const siny = 2 * (body.quaternion.w * body.quaternion.y + body.quaternion.x * body.quaternion.z);
     const cosy = 1 - 2 * (body.quaternion.y * body.quaternion.y + body.quaternion.z * body.quaternion.z);
     data.mesh.rotation.set(0, Math.atan2(siny, cosy), 0);
@@ -1844,6 +2408,61 @@ function animate() {
     const siny = 2 * (be.w * be.y + be.x * be.z);
     const cosy = 1 - 2 * (be.y * be.y + be.z * be.z);
     activeItem.mesh.rotation.set(0, Math.atan2(siny, cosy), 0);
+  }
+
+  // LANDING IMPACT: when a jumped item returns to table level, scatter nearby items
+  for (const item of allItems) {
+    if (item._jumpLanded !== false) continue;
+    // Detect landing: y near table surface (< item radius up from table) and falling (vy < 0)
+    const itemR = getLevelRadius(item.level);
+    if (item.body.position.y < itemR + 0.15 && item.body.velocity.y < -1) {
+      item._jumpLanded = true;
+      // Boost mass 3x on landing so the item pushes through any crowded items
+      item.body.mass = 3;
+      item.body.updateMassProperties();
+      // Strong scatter impulse to push nearby items out of the landing zone
+      const scatterRadius = 1.8;
+      for (const other of allItems) {
+        if (other === item) continue;
+        const dx = other.body.position.x - item.body.position.x;
+        const dz = other.body.position.z - item.body.position.z;
+        const d = Math.sqrt(dx*dx + dz*dz);
+        if (d < scatterRadius && d > 0.01) {
+          other.body.velocity.x += (dx / d) * (3 + (1 - d / scatterRadius) * 3);
+          other.body.velocity.z += (dz / d) * (3 + (1 - d / scatterRadius) * 3);
+          other.body.velocity.y += 1.0 + (1 - d / scatterRadius) * 1.5;
+          other.body.wakeUp();
+        }
+      }
+      // Give the landed item a downward nudge to push through the crowd
+      item.body.velocity.y = -2;
+      item.body.wakeUp();
+      spawnMergeParticles(item.mesh.position.clone(), 0xff6600);
+    }
+  }
+
+  // ONE-WAY BARRIER at the deadline: once an item crosses onto the playfield,
+  // it can never come back toward the launcher. Uses a tracking flag so even
+  // items pushed by other collisions get caught. The activeItem is exempt.
+  for (const item of allItems) {
+    if (item === activeItem || !item.launched) continue;
+    const pz = item.body.position.z;
+    // Mark when item first crosses onto the playfield side
+    if (pz < DEADLINE_Z) item._pastDeadline = true;
+    // Enforce: once past the deadline, cannot cross back toward the launcher
+    if (item._pastDeadline && pz > DEADLINE_Z) {
+      item.body.position.z = DEADLINE_Z - 0.1; // push back past the line
+      item.body.velocity.z = -3; // fixed push-back speed (stronger than any collision push)
+      item.body.wakeUp();
+    }
+  }
+
+  // VOID CLEANUP: remove items that fall off the table (over the side walls, etc.)
+  for (let i = allItems.length - 1; i >= 0; i--) {
+    const item = allItems[i];
+    if (item.body.position.y < -3) {
+      removeItem(item.body);
+    }
   }
 
   updateScorePopups();
