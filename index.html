@@ -451,24 +451,24 @@ for (let i = 0; i < 4; i++) {
   jumpArrows.push(arrow);
 }
 
-// Jump point indicator — a small ramp/chevron on the ground showing where the jump will trigger
+// Jump point indicator — a large red chevron on the ground showing where the jump will trigger
 const jumpRampGeo = new THREE.BufferGeometry();
 const rampVerts = new Float32Array([
-  0, 0, 0.1,    // tip (forward)
-  -0.07, 0, -0.05,  // left back
-  0.07, 0, -0.05   // right back
+  0, 0, 0.3,     // tip (forward) 3x
+  -0.21, 0, -0.15,  // left back 3x
+  0.21, 0, -0.15   // right back 3x
 ]);
 jumpRampGeo.setAttribute('position', new THREE.BufferAttribute(rampVerts, 3));
 jumpRampGeo.setIndex([0, 1, 2]);
 jumpRampGeo.computeVertexNormals();
-const jumpRampMat = new THREE.MeshBasicMaterial({ color: 0x00ff88, transparent: true, opacity: 0.7, side: THREE.DoubleSide });
+const jumpRampMat = new THREE.MeshBasicMaterial({ color: 0xff3333, side: THREE.DoubleSide });
 const jumpRamp = new THREE.Mesh(jumpRampGeo, jumpRampMat);
 jumpRamp.visible = false;
 jumpRamp.position.y = 0.02;
 scene.add(jumpRamp);
-// Glow ring around the ramp
-const jumpRingGeo = new THREE.RingGeometry(0.08, 0.12, 16);
-const jumpRingMat = new THREE.MeshBasicMaterial({ color: 0x00ff88, transparent: true, opacity: 0.3, side: THREE.DoubleSide });
+// Ring around the ramp
+const jumpRingGeo = new THREE.RingGeometry(0.24, 0.36, 16);
+const jumpRingMat = new THREE.MeshBasicMaterial({ color: 0xff3333, side: THREE.DoubleSide });
 const jumpRing = new THREE.Mesh(jumpRingGeo, jumpRingMat);
 jumpRing.visible = false;
 jumpRing.rotation.x = -Math.PI / 2;

@@ -3,15 +3,15 @@
     "wordIndex": 5,
     "wordState": {
       "letterStates": [
-        0,
         1,
+        0,
         0,
         0,
         0,
         0
       ],
-      "countdownIndex": 1,
-      "countdownValue": 3,
+      "countdownIndex": 0,
+      "countdownValue": 7,
       "revealedCount": 0,
       "won": false
     }
