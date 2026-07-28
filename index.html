@@ -2633,19 +2633,8 @@ let shadowsEnabled = true;
 document.getElementById('admin-shadows').addEventListener('click', () => {
   shadowsEnabled = !shadowsEnabled;
   const btn = document.getElementById('admin-shadows');
-  if (shadowsEnabled) {
-    renderer.shadowMap.enabled = true;
-    btn.textContent = '☀️ Shadows: ON';
-    scene.traverse(obj => {
-      if (obj.isMesh) { obj.castShadow = true; obj.receiveShadow = true; }
-    });
-  } else {
-    renderer.shadowMap.enabled = false;
-    btn.textContent = '🌑 Shadows: OFF';
-    scene.traverse(obj => {
-      if (obj.isMesh) { obj.castShadow = false; obj.receiveShadow = false; }
-    });
-  }
+  renderer.shadowMap.enabled = shadowsEnabled;
+  btn.textContent = shadowsEnabled ? '☀️ Shadows: ON' : '🌑 Shadows: OFF';
 });
 // ============================================================
 document.getElementById('restart-btn').addEventListener('click', restartGame);
