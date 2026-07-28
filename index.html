@@ -2549,6 +2549,16 @@ function animate() {
   }
 
   updateScorePopups();
+  // PERCHED ITEM CHECK: force settled items that are floating above the table to sink down
+  for (const item of allItems) {
+    if (item === activeItem || !item._settled || item._boardSeed) continue;
+    const restY = getLevelRadius(item.level) + 0.1; // natural resting height on the ground
+    if (item.body.position.y > restY + 0.25) {
+      // Item is perched above where it should be — push it down
+      item.body.velocity.y -= 2.0;
+      item.body.wakeUp();
+    }
+  }
   updateParticles(dt);
   updateLevelBadges();
   updatePowerUpAnims();
