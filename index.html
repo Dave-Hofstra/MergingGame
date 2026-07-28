@@ -2054,12 +2054,12 @@ function checkProximityMerges() {
     for (let j = i + 1; j < allItems.length; j++) {
       const a = allItems[i], b = allItems[j];
       if (a.type !== b.type && a.type < 90 && b.type < 90) continue;
-      // Both settled — they already passed their merge window
-      if (a._settled && b._settled) continue;
+      // Allow settled items of the same type to merge when touching
       // Skip if either item is the unthrown launcher item — never merge/preview
       if (a === activeItem || b === activeItem) continue;
       const speedA = a.body.velocity.length(), speedB = b.body.velocity.length();
-      if (speedA < 0.08 && speedB < 0.08) continue;
+      // Allow same-type items to merge at rest; only skip if diff-type and both nearly still
+      if (a.type !== b.type && speedA < 0.08 && speedB < 0.08) continue;
       // Determine which item is the thrown one (higher velocity)
       const thrown = speedA >= speedB ? a : b;
       const boardItem = speedA >= speedB ? b : a;
