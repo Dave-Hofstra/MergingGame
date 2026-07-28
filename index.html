@@ -2634,6 +2634,19 @@ document.getElementById('admin-shadows').addEventListener('click', () => {
   shadowsEnabled = !shadowsEnabled;
   const btn = document.getElementById('admin-shadows');
   renderer.shadowMap.enabled = shadowsEnabled;
+  if (shadowsEnabled) {
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 1024;
+    dirLight.shadow.mapSize.height = 1024;
+    if (dirLight.shadow.map) dirLight.shadow.map.dispose();
+    dirLight.shadow.map = null;
+  } else {
+    dirLight.castShadow = false;
+    dirLight.shadow.mapSize.width = 1;
+    dirLight.shadow.mapSize.height = 1;
+    if (dirLight.shadow.map) dirLight.shadow.map.dispose();
+    dirLight.shadow.map = null;
+  }
   btn.textContent = shadowsEnabled ? '☀️ Shadows: ON' : '🌑 Shadows: OFF';
 });
 // ============================================================
