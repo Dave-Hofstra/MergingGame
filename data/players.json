@@ -21,15 +21,15 @@
     "wordState": {
       "letterStates": [
         2,
+        2,
+        0,
         1,
-        0,
-        0,
         0,
         0
       ],
-      "countdownIndex": 1,
-      "countdownValue": 5,
-      "revealedCount": 1,
+      "countdownIndex": 3,
+      "countdownValue": 8,
+      "revealedCount": 2,
       "won": false
     }
   }

@@ -1609,13 +1609,14 @@ function updateAimGuide() {
         jumpObstacleZ = obs.body.position.z;
       }
     }
-    // Position chevron + ring at the obstacle point
+    // Position chevron + ring at the jump takeoff point (launcher), not at the obstacle
     if (jumpObstacleZ < LAUNCHER_Z - 0.5) {
+      const takeoffZ = LAUNCHER_Z - 0.2;
       jumpRamp.position.x = x;
-      jumpRamp.position.z = jumpObstacleZ;
+      jumpRamp.position.z = takeoffZ;
       jumpRamp.visible = true;
       jumpRing.position.x = x;
-      jumpRing.position.z = jumpObstacleZ;
+      jumpRing.position.z = takeoffZ;
       jumpRing.visible = true;
     } else {
       jumpRamp.visible = false;
