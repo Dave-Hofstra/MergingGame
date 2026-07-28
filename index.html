@@ -2959,7 +2959,7 @@ function showWordWin() {
 function showNotification(text, duration) {
   const el = document.getElementById('notification');
   const textEl = document.getElementById('notification-text');
-  textEl.textContent = text;
+  textEl.innerHTML = text;
   el.classList.add('show');
   clearTimeout(el._hideTimer);
   el._hideTimer = setTimeout(() => {
@@ -2989,7 +2989,7 @@ function handleGuess() {
     // Wrong - spawn 4 golf balls
     playSound('gameover');
     spawnPenaltyGolfBalls();
-    showNotification('✗ Wrong! 4 golf balls added', 2500);
+    showNotification('✗ Wrong!<br>4 golf balls added', 2500);
   }
   input.value = '';
 }
