@@ -143,7 +143,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a0a2e;font-family:
     <button id="restart-btn">▶ Play Again</button>
   </div>
 </div>
-<div id="admin-bar"><span id="ver-stamp">07/28/26 09:29 EST</span><button id="admin-lock" title="Admin mode">🔒</button></div>
+<div id="admin-bar"><span id="ver-stamp">07/28/26 09:31 EST</span><button id="admin-lock" title="Admin mode">🔒</button></div>
 <div id="admin-panel">
   <div class="a-title">Set Next Throw</div>
   <button id="admin-random" style="background:rgba(60,200,60,.2);border-color:#4caf50;text-align:center;font-weight:700">🎲 Normal</button>
@@ -1609,14 +1609,14 @@ function updateAimGuide() {
         jumpObstacleZ = obs.body.position.z;
       }
     }
-    // Position chevron + ring at the jump takeoff point (launcher), not at the obstacle
+    // Position chevron a little in front of the obstacle (where the jump triggers)
     if (jumpObstacleZ < LAUNCHER_Z - 0.5) {
-      const takeoffZ = LAUNCHER_Z - 0.2;
+      const markZ = jumpObstacleZ + 0.8; // ~0.8 units ahead of the obstacle
       jumpRamp.position.x = x;
-      jumpRamp.position.z = takeoffZ;
+      jumpRamp.position.z = markZ;
       jumpRamp.visible = true;
       jumpRing.position.x = x;
-      jumpRing.position.z = takeoffZ;
+      jumpRing.position.z = markZ;
       jumpRing.visible = true;
     } else {
       jumpRamp.visible = false;
