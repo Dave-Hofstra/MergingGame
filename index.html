@@ -166,6 +166,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a0a2e;font-family:
   <button data-type="12">🐊 Alligator</button>
   <button data-type="13">🐢 Turtle</button>
   <button data-type="14">🍹 Margarita</button>
+  <div class="sep"></div>
+  <button id="admin-shadows">☀️ Shadows: ON</button>
 </div>
 <div id="merge-flash" class="merge-flash"></div>
 <!-- Word Guessing UI -->
@@ -2625,6 +2627,26 @@ popQueue = function() {
   if (adminForcedType >= 0) { return adminForcedType; }
   return origPopQueue();
 };
+
+// Shadow toggle — disable/enable shadows for performance testing
+let shadowsEnabled = true;
+document.getElementById('admin-shadows').addEventListener('click', () => {
+  shadowsEnabled = !shadowsEnabled;
+  const btn = document.getElementById('admin-shadows');
+  if (shadowsEnabled) {
+    renderer.shadowMap.enabled = true;
+    btn.textContent = '☀️ Shadows: ON';
+    scene.traverse(obj => {
+      if (obj.isMesh) { obj.castShadow = true; obj.receiveShadow = true; }
+    });
+  } else {
+    renderer.shadowMap.enabled = false;
+    btn.textContent = '🌑 Shadows: OFF';
+    scene.traverse(obj => {
+      if (obj.isMesh) { obj.castShadow = false; obj.receiveShadow = false; }
+    });
+  }
+});
 // ============================================================
 document.getElementById('restart-btn').addEventListener('click', restartGame);
 
