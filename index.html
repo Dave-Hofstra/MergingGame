@@ -1631,6 +1631,12 @@ function removeItem(body) {
   const data = itemBodies.get(body);
   if (!data) return;
   scene.remove(data.mesh);
+  // Dispose of Three.js resources to prevent GPU memory leak
+  if (data.mesh.geometry) data.mesh.geometry.dispose();
+  if (data.mesh.material) {
+    if (Array.isArray(data.mesh.material)) data.mesh.material.forEach(m => m.dispose());
+    else data.mesh.material.dispose();
+  }
   world.removeBody(body);
   itemBodies.delete(body);
   allItems = allItems.filter(item => item.body !== body);
@@ -2221,7 +2227,7 @@ function endGame() {
 
 function restartGame() {
   const bodies = [...itemBodies.keys()];
-  bodies.forEach(body => { const d = itemBodies.get(body); if (d) scene.remove(d.mesh); world.removeBody(body); });
+  bodies.forEach(body => { const d = itemBodies.get(body); if (d) { scene.remove(d.mesh); if (d.mesh.geometry) d.mesh.geometry.dispose(); if (d.mesh.material) { if (Array.isArray(d.mesh.material)) d.mesh.material.forEach(m => m.dispose()); else d.mesh.material.dispose(); } } world.removeBody(body); });
   itemBodies.clear(); allItems = []; activeItem = null; queue = [];
   trajLine.visible = false;
   comboCount = 0; lastMergeTime = 0; score = 0;
@@ -2894,7 +2900,7 @@ function wordWinResetBoard() {
   advanceWord();
   // Reset the board but keep score
   const bodies = [...itemBodies.keys()];
-  bodies.forEach(body => { const d = itemBodies.get(body); if (d) scene.remove(d.mesh); world.removeBody(body); });
+  bodies.forEach(body => { const d = itemBodies.get(body); if (d) { scene.remove(d.mesh); if (d.mesh.geometry) d.mesh.geometry.dispose(); if (d.mesh.material) { if (Array.isArray(d.mesh.material)) d.mesh.material.forEach(m => m.dispose()); else d.mesh.material.dispose(); } } world.removeBody(body); });
   itemBodies.clear(); allItems = []; activeItem = null; queue = [];
   trajLine.visible = false;
   document.querySelectorAll('.score-popup').forEach(el => el.remove());

@@ -3,6 +3,20 @@
     "wordIndex": 5
   },
   "DonnaH": {
-    "wordIndex": 1
+    "wordIndex": 1,
+    "wordState": {
+      "letterStates": [
+        2,
+        2,
+        2,
+        1,
+        2,
+        0
+      ],
+      "countdownIndex": 3,
+      "countdownValue": 7,
+      "revealedCount": 4,
+      "won": false
+    }
   }
 }
