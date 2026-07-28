@@ -2661,22 +2661,66 @@ function getCurrentWord() {
 function advanceWord() {
   const idx = getPlayerWordIndex(currentPlayer);
   setPlayerWordIndex(currentPlayer, idx + 1);
+  clearWordState();
+}
+
+// Persist full word game state across sessions and devices
+function saveWordState() {
+  if (!wordGame || !currentPlayer) return;
+  const data = loadPlayerData();
+  if (!data[currentPlayer]) data[currentPlayer] = {};
+  data[currentPlayer].wordState = {
+    letterStates: wordGame.letterStates,
+    countdownIndex: wordGame.countdownIndex,
+    countdownValue: wordGame.countdownValue,
+    revealedCount: wordGame.revealedCount,
+    won: wordGame.won
+  };
+  savePlayerData(data);
+  syncPlayerToServer(currentPlayer);
+}
+
+function loadWordState() {
+  if (!currentPlayer) return null;
+  const data = loadPlayerData();
+  const saved = data[currentPlayer] && data[currentPlayer].wordState;
+  if (!saved) return null;
+  return saved;
+}
+
+function clearWordState() {
+  if (!currentPlayer) return;
+  const data = loadPlayerData();
+  if (data[currentPlayer]) delete data[currentPlayer].wordState;
+  savePlayerData(data);
 }
 
 function startWordGame() {
   const word = getCurrentWord();
   if (!word) { wordGame = null; document.getElementById('word-area').style.display = 'none'; return; }
-  // letterStates: 0=hidden(countdown), 1=letter(the one with countdown), 2=revealed
-  wordGame = {
-    word: word,
-    letterStates: new Array(word.length).fill(0),
-    countdownIndex: -1, // index of letter with countdown
-    countdownValue: 9, // current countdown number
-    revealedCount: 0,
-    won: false
-  };
-  // Pick first random letter to countdown
-  pickNewCountdownLetter();
+  // Try to restore saved state first
+  const saved = loadWordState();
+  if (saved && saved.letterStates && saved.letterStates.length === word.length) {
+    wordGame = {
+      word: word,
+      letterStates: saved.letterStates,
+      countdownIndex: saved.countdownIndex,
+      countdownValue: saved.countdownValue,
+      revealedCount: saved.revealedCount,
+      won: saved.won
+    };
+  } else {
+    // Fresh word: letterStates: 0=hidden, 1=countdown, 2=revealed
+    wordGame = {
+      word: word,
+      letterStates: new Array(word.length).fill(0),
+      countdownIndex: -1,
+      countdownValue: 9,
+      revealedCount: 0,
+      won: false
+    };
+    pickNewCountdownLetter();
+  }
   updateWordDisplay();
   // Show word number
   const wordNum = getPlayerWordIndex(currentPlayer) + 1;
@@ -2701,6 +2745,7 @@ function pickNewCountdownLetter() {
   wordGame.countdownIndex = hidden[Math.floor(Math.random() * hidden.length)];
   wordGame.letterStates[wordGame.countdownIndex] = 1; // mark as counting down
   wordGame.countdownValue = 9;
+  saveWordState();
 }
 
 function updateWordDisplay() {
@@ -2745,6 +2790,7 @@ function decrementCountdown() {
     pickNewCountdownLetter();
   }
   updateWordDisplay();
+  saveWordState();
 }
 
 function checkWordComplete() {
@@ -2756,6 +2802,7 @@ function checkWordComplete() {
   }
   if (allRevealed) {
     wordGame.won = true;
+    saveWordState();
     showWordWin();
     return true;
   }
@@ -2794,6 +2841,7 @@ function handleGuess() {
     }
     wordGame.revealedCount = wordGame.word.length;
     updateWordDisplay();
+    saveWordState();
     showWordWin();
   } else {
     // Wrong - spawn 4 golf balls
