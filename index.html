@@ -143,7 +143,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a0a2e;font-family:
     <button id="restart-btn">▶ Play Again</button>
   </div>
 </div>
-<div id="admin-bar"><span id="ver-stamp">07/26/26 20:41 EST</span><button id="admin-lock" title="Admin mode">🔒</button></div>
+<div id="admin-bar"><span id="ver-stamp">07/27/26 21:58 EST</span><button id="admin-lock" title="Admin mode">🔒</button></div>
 <div id="admin-panel">
   <div class="a-title">Set Next Throw</div>
   <button id="admin-random" style="background:rgba(60,200,60,.2);border-color:#4caf50;text-align:center;font-weight:700">🎲 Normal</button>
@@ -1772,6 +1772,8 @@ function removeBadge(body) {
   if (el) { el.remove(); itemBadges.delete(body); }
 }
 function updateLevelBadges() {
+  // Throttle: only update every 3 frames to reduce DOM churn on full boards
+  if (frameCount % 3 !== 0) return;
   for (const item of allItems) {
     if (item === activeItem) continue;
     if (item.type >= 90) continue; // power-ups have no level badge
@@ -2056,6 +2058,15 @@ const MERGE_PROX = 1.15;
 
 function checkProximityMerges() {
   if (!gameRunning) return;
+  // Throttle: run at most every 5 frames to prevent O(n²) churn on a full board
+  if (frameCount % 5 !== 0) return;
+  // Fast-exit: if no items are in motion and nothing recently launched, skip
+  let hasMotion = false;
+  for (const item of allItems) {
+    if (item === activeItem) continue;
+    if (item.body.velocity.length() > 0.08 || !item._settled) { hasMotion = true; break; }
+  }
+  if (!hasMotion) return;
   for (let i = 0; i < allItems.length; i++) {
     for (let j = i + 1; j < allItems.length; j++) {
       const a = allItems[i], b = allItems[j];
