@@ -143,7 +143,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a0a2e;font-family:
     <button id="restart-btn">▶ Play Again</button>
   </div>
 </div>
-<div id="admin-bar"><span id="ver-stamp">07/27/26 21:58 EST</span><button id="admin-lock" title="Admin mode">🔒</button></div>
+<div id="admin-bar"><span id="ver-stamp">07/28/26 09:19 EST</span><button id="admin-lock" title="Admin mode">🔒</button></div>
 <div id="admin-panel">
   <div class="a-title">Set Next Throw</div>
   <button id="admin-random" style="background:rgba(60,200,60,.2);border-color:#4caf50;text-align:center;font-weight:700">🎲 Normal</button>
@@ -450,6 +450,30 @@ for (let i = 0; i < 4; i++) {
   scene.add(arrow);
   jumpArrows.push(arrow);
 }
+
+// Jump point indicator — a small ramp/chevron on the ground showing where the jump will trigger
+const jumpRampGeo = new THREE.BufferGeometry();
+const rampVerts = new Float32Array([
+  0, 0, 0.1,    // tip (forward)
+  -0.07, 0, -0.05,  // left back
+  0.07, 0, -0.05   // right back
+]);
+jumpRampGeo.setAttribute('position', new THREE.BufferAttribute(rampVerts, 3));
+jumpRampGeo.setIndex([0, 1, 2]);
+jumpRampGeo.computeVertexNormals();
+const jumpRampMat = new THREE.MeshBasicMaterial({ color: 0x00ff88, transparent: true, opacity: 0.7, side: THREE.DoubleSide });
+const jumpRamp = new THREE.Mesh(jumpRampGeo, jumpRampMat);
+jumpRamp.visible = false;
+jumpRamp.position.y = 0.02;
+scene.add(jumpRamp);
+// Glow ring around the ramp
+const jumpRingGeo = new THREE.RingGeometry(0.08, 0.12, 16);
+const jumpRingMat = new THREE.MeshBasicMaterial({ color: 0x00ff88, transparent: true, opacity: 0.3, side: THREE.DoubleSide });
+const jumpRing = new THREE.Mesh(jumpRingGeo, jumpRingMat);
+jumpRing.visible = false;
+jumpRing.rotation.x = -Math.PI / 2;
+jumpRing.position.y = 0.015;
+scene.add(jumpRing);
 
 // ============================================================
 // ITEM MESH BUILDER (takes item TYPE index, builds shape)
@@ -1568,6 +1592,36 @@ function updateAimGuide() {
     const startZ = LAUNCHER_Z - 0.2;
     const endZ = isPortrait() ? -3.5 : trajPos[(Math.min(trajGeo.drawRange.count, TRAJ_POINTS) - 1) * 3 + 2];
     const arcHeight = 0.6;
+
+    // Find the first obstacle along the trajectory to place the jump indicator
+    let jumpObstacleZ = endZ;
+    const jx = x, jz = startZ;
+    const dirZ = (endZ - startZ) > 0 ? -1 : -1; // always shooting toward negative Z
+    for (const obs of allItems) {
+      if (obs === activeItem || obs._jumpActive) continue;
+      const rz = obs.body.position.z - jz;
+      const rx = obs.body.position.x - jx;
+      // Must be ahead of the launcher
+      if (rz > 0 || obs.body.position.z > LAUNCHER_Z) continue;
+      const perpDist = Math.abs(rx);
+      const hitR = getLevelRadius(activeItem.level) + getLevelRadius(obs.level) + 0.1;
+      if (perpDist < hitR && obs.body.position.z > jumpObstacleZ) {
+        jumpObstacleZ = obs.body.position.z;
+      }
+    }
+    // Position ramp indicator at the obstacle
+    if (jumpObstacleZ < LAUNCHER_Z - 0.5) {
+      jumpRamp.position.x = x;
+      jumpRamp.position.z = jumpObstacleZ;
+      jumpRamp.visible = true;
+      jumpRing.position.x = x;
+      jumpRing.position.z = jumpObstacleZ;
+      jumpRing.visible = true;
+    } else {
+      jumpRamp.visible = false;
+      jumpRing.visible = false;
+    }
+
     for (let i = 0; i < jumpArcPoints; i++) {
       const t = i / (jumpArcPoints - 1);
       const z = startZ + (endZ - startZ) * t;
@@ -1597,6 +1651,8 @@ function updateAimGuide() {
     jumpLine.visible = false;
     jumpDots.visible = false;
     jumpArrows.forEach(a => { a.visible = false; a.material.opacity = 0; });
+    jumpRamp.visible = false;
+    jumpRing.visible = false;
   }
 }
 

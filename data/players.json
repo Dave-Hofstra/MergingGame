@@ -1,21 +1,35 @@
 {
   "DaveH": {
-    "wordIndex": 5
-  },
-  "DonnaH": {
-    "wordIndex": 2,
+    "wordIndex": 5,
     "wordState": {
       "letterStates": [
-        2,
+        0,
+        1,
         0,
         0,
-        2,
-        2,
-        1
+        0,
+        0
       ],
-      "countdownIndex": 5,
-      "countdownValue": 8,
-      "revealedCount": 3,
+      "countdownIndex": 1,
+      "countdownValue": 3,
+      "revealedCount": 0,
+      "won": false
+    }
+  },
+  "DonnaH": {
+    "wordIndex": 3,
+    "wordState": {
+      "letterStates": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "countdownIndex": 0,
+      "countdownValue": 9,
+      "revealedCount": 0,
       "won": false
     }
   }
