@@ -2340,8 +2340,8 @@ function animate() {
         // Perpendicular distance from obstacle center to the ray
         const perpDist = Math.abs(rx * (-dirZ) + rz * dirX);
 
-        // Hit radius = just the thrown item's own width (narrow ray, not a corridor)
-        const hitRadius = getLevelRadius(item.level) + 0.1;
+        // Hit radius = thrown item + obstacle combined (was just thrown item, missed large obstacles)
+        const hitRadius = getLevelRadius(item.level) + getLevelRadius(obs.level) + 0.1;
 
         if (perpDist < hitRadius && t < nearestT) {
           nearestT = t;
