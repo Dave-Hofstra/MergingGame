@@ -1611,7 +1611,7 @@ function updateAimGuide() {
     }
     // Position chevron a little in front of the obstacle (where the jump triggers)
     if (jumpObstacleZ < LAUNCHER_Z - 0.5) {
-      const markZ = jumpObstacleZ + 0.8; // ~0.8 units ahead of the obstacle
+      const markZ = jumpObstacleZ + 1.5; // ~1.5 units ahead of the obstacle
       jumpRamp.position.x = x;
       jumpRamp.position.z = markZ;
       jumpRamp.visible = true;

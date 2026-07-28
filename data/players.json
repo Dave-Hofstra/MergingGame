@@ -3,16 +3,16 @@
     "wordIndex": 5,
     "wordState": {
       "letterStates": [
+        2,
         1,
-        0,
         0,
         0,
         0,
         0
       ],
-      "countdownIndex": 0,
-      "countdownValue": 3,
-      "revealedCount": 0,
+      "countdownIndex": 1,
+      "countdownValue": 9,
+      "revealedCount": 1,
       "won": false
     }
   },
