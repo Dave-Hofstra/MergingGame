@@ -50,6 +50,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a0a2e;font-family:
 #admin-panel .sep{border-top:1px solid rgba(255,255,255,.1);margin:2px 0}
 /* Score popup */
 .score-popup{position:fixed;pointer-events:none;z-index:50;color:#fff8b5;font:800 clamp(16px,3vw,26px) system-ui,sans-serif;text-shadow:0 2px 6px #000,0 0 16px #ff9,0 0 30px rgba(255,200,50,.3);will-change:transform,opacity,left,top}
+.score-popup.wrong{color:#ff6b6b;text-shadow:0 2px 6px #000,0 0 16px rgba(255,50,50,.5),0 0 30px rgba(255,0,0,.3)}
 /* Merge flash */
 #gameover-box{background:linear-gradient(145deg,rgba(30,10,50,.95),rgba(15,5,30,.98));border:2px solid #f0c040;border-radius:18px;padding:clamp(24px,5vw,48px);text-align:center;max-width:420px;width:90%;box-shadow:0 0 60px rgba(240,192,64,.2)}
 #gameover-box h2{font-size:clamp(28px,5vw,44px);margin-bottom:8px;text-shadow:0 2px 10px rgba(240,192,64,.3);color:#f0c040}
@@ -1679,9 +1680,9 @@ function showMergeFlash(type) {
 // SCORE POPUPS
 // ============================================================
 const scorePopups = [];
-function createScorePopup(worldPos, text) {
+function createScorePopup(worldPos, text, cls) {
   const div = document.createElement('div');
-  div.className = 'score-popup'; div.textContent = text;
+  div.className = 'score-popup' + (cls ? ' ' + cls : ''); div.textContent = text;
   document.body.appendChild(div);
   scorePopups.push({ element: div, worldPos: worldPos.clone(), start: performance.now(), duration: 900 });
 }
@@ -2798,6 +2799,7 @@ function handleGuess() {
     // Wrong - spawn 4 golf balls
     playSound('gameover');
     spawnPenaltyGolfBalls();
+    createScorePopup({ x: 0, y: 1.5, z: 0 }, '✗ Wrong! 4 golf balls added', 'wrong');
   }
   input.value = '';
 }
