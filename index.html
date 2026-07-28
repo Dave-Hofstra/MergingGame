@@ -39,6 +39,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a0a2e;font-family:
 #admin-bar{position:fixed;bottom:6px;right:6px;z-index:30;display:flex;align-items:center;gap:6px;pointer-events:none}
 #admin-bar>*{pointer-events:auto}
 #ver-stamp{color:rgba(255,255,255,.15);font:9px/1 monospace,sans-serif;letter-spacing:0.5px}
+#shadow-toggle{font:14px/1 system-ui,sans-serif;cursor:pointer;color:rgba(255,255,255,.25);transition:color .2s;background:none;border:none;padding:0}
+#shadow-toggle:hover{color:rgba(255,255,255,.7)}
 #admin-lock{font:14px/1 system-ui,sans-serif;cursor:pointer;color:rgba(255,255,255,.15);transition:color .2s;background:none;border:none;padding:0}
 #admin-lock:hover{color:rgba(255,255,255,.5)}
 #admin-panel{position:fixed;z-index:35;display:none;flex-direction:column;gap:4px;padding:6px;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.15);border-radius:6px;backdrop-filter:blur(6px);bottom:28px;right:6px;width:130px;pointer-events:auto}
@@ -143,7 +145,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a0a2e;font-family:
     <button id="restart-btn">▶ Play Again</button>
   </div>
 </div>
-<div id="admin-bar"><span id="ver-stamp">07/28/26 09:31 EST</span><button id="admin-lock" title="Admin mode">🔒</button></div>
+<div id="admin-bar"><span id="ver-stamp">07/28/26 09:31 EST</span><button id="shadow-toggle" title="Toggle shadows">☀️</button><button id="admin-lock" title="Admin mode">🔒</button></div>
 <div id="admin-panel">
   <div class="a-title">Set Next Throw</div>
   <button id="admin-random" style="background:rgba(60,200,60,.2);border-color:#4caf50;text-align:center;font-weight:700">🎲 Normal</button>
@@ -166,8 +168,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a0a2e;font-family:
   <button data-type="12">🐊 Alligator</button>
   <button data-type="13">🐢 Turtle</button>
   <button data-type="14">🍹 Margarita</button>
-  <div class="sep"></div>
-  <button id="admin-shadows">☀️ Shadows: ON</button>
 </div>
 <div id="merge-flash" class="merge-flash"></div>
 <!-- Word Guessing UI -->
@@ -2628,11 +2628,11 @@ popQueue = function() {
   return origPopQueue();
 };
 
-// Shadow toggle — disable/enable shadows for performance testing
+// Shadow toggle — always visible, no admin mode needed
 let shadowsEnabled = true;
-document.getElementById('admin-shadows').addEventListener('click', () => {
+document.getElementById('shadow-toggle').addEventListener('click', () => {
   shadowsEnabled = !shadowsEnabled;
-  const btn = document.getElementById('admin-shadows');
+  const btn = document.getElementById('shadow-toggle');
   renderer.shadowMap.enabled = shadowsEnabled;
   if (shadowsEnabled) {
     dirLight.castShadow = true;
@@ -2640,14 +2640,17 @@ document.getElementById('admin-shadows').addEventListener('click', () => {
     dirLight.shadow.mapSize.height = 1024;
     if (dirLight.shadow.map) dirLight.shadow.map.dispose();
     dirLight.shadow.map = null;
+    btn.textContent = '☀️';
+    btn.title = 'Shadows ON — tap to disable';
   } else {
     dirLight.castShadow = false;
     dirLight.shadow.mapSize.width = 1;
     dirLight.shadow.mapSize.height = 1;
     if (dirLight.shadow.map) dirLight.shadow.map.dispose();
     dirLight.shadow.map = null;
+    btn.textContent = '🌑';
+    btn.title = 'Shadows OFF — tap to enable';
   }
-  btn.textContent = shadowsEnabled ? '☀️ Shadows: ON' : '🌑 Shadows: OFF';
 });
 // ============================================================
 document.getElementById('restart-btn').addEventListener('click', restartGame);
