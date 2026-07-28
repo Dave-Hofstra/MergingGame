@@ -33,8 +33,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a0a2e;font-family:
 /* Launch label - item name near bottom of the board (not the screen) */
 #launch-label{position:fixed;bottom:clamp(72px,14vw,120px);left:50%;transform:translateX(-50%);text-align:center;color:rgba(255,255,255,.25);font:500 clamp(16px,3vw,28px) system-ui,sans-serif;letter-spacing:0.5px;pointer-events:none}
 #launch-name{color:#f0c040;font-weight:700}
-/* Jump label — shows "JUMP" at the obstacle point */
-#jump-label{position:fixed;pointer-events:none;z-index:45;display:none;padding:clamp(2px,0.4vw,4px) clamp(8px,1.5vw,14px);border:2px solid #ff3333;border-radius:6px;background:rgba(255,50,50,.15);color:#ff4444;font:700 clamp(11px,2vw,18px) system-ui,sans-serif;text-transform:uppercase;letter-spacing:2px;transform:translate(-50%,-100%);white-space:nowrap;backdrop-filter:blur(2px)}
 /* Level badges */
 .level-badge{position:fixed;pointer-events:none;z-index:15;width:clamp(16px,2.5vw,24px);height:clamp(16px,2.5vw,24px);border-radius:50%;background:rgba(0,0,0,.65);border:1.5px solid rgba(255,255,255,.5);color:#fff;font:700 clamp(8px,1.3vw,12px) system-ui,sans-serif;display:flex;align-items:center;justify-content:center;text-shadow:0 1px 2px #000;transform:translate(-50%,-50%)}
 /* Admin panel */
@@ -135,7 +133,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a0a2e;font-family:
   <div id="score">SCORE: <span id="score-val">0</span></div>
   <div id="combo"></div>
   <div id="launch-label"><span id="launch-name"></span></div>
-  <div id="jump-label">JUMP</div>
 </div>
 <div id="info-btn">?</div>
 <div id="gameover">
@@ -146,7 +143,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a0a2e;font-family:
     <button id="restart-btn">▶ Play Again</button>
   </div>
 </div>
-<div id="admin-bar"><span id="ver-stamp">07/28/26 09:26 EST</span><button id="admin-lock" title="Admin mode">🔒</button></div>
+<div id="admin-bar"><span id="ver-stamp">07/28/26 09:29 EST</span><button id="admin-lock" title="Admin mode">🔒</button></div>
 <div id="admin-panel">
   <div class="a-title">Set Next Throw</div>
   <button id="admin-random" style="background:rgba(60,200,60,.2);border-color:#4caf50;text-align:center;font-weight:700">🎲 Normal</button>
@@ -453,6 +450,30 @@ for (let i = 0; i < 4; i++) {
   scene.add(arrow);
   jumpArrows.push(arrow);
 }
+
+// Jump point indicator — green chevron on the ground showing where the jump will trigger
+const jumpRampGeo = new THREE.BufferGeometry();
+const rampVerts = new Float32Array([
+  0, 0, -0.2,     // tip (pointing up-screen = negative Z)
+  -0.14, 0, 0.1,  // left back
+  0.14, 0, 0.1    // right back
+]);
+jumpRampGeo.setAttribute('position', new THREE.BufferAttribute(rampVerts, 3));
+jumpRampGeo.setIndex([0, 1, 2]);
+jumpRampGeo.computeVertexNormals();
+const jumpRampMat = new THREE.MeshBasicMaterial({ color: 0x00ff88, side: THREE.DoubleSide });
+const jumpRamp = new THREE.Mesh(jumpRampGeo, jumpRampMat);
+jumpRamp.visible = false;
+jumpRamp.position.y = 0.02;
+scene.add(jumpRamp);
+// Ring around the chevron
+const jumpRingGeo = new THREE.RingGeometry(0.16, 0.24, 16);
+const jumpRingMat = new THREE.MeshBasicMaterial({ color: 0x00ff88, side: THREE.DoubleSide });
+const jumpRing = new THREE.Mesh(jumpRingGeo, jumpRingMat);
+jumpRing.visible = false;
+jumpRing.rotation.x = -Math.PI / 2;
+jumpRing.position.y = 0.015;
+scene.add(jumpRing);
 
 // ============================================================
 // ITEM MESH BUILDER (takes item TYPE index, builds shape)
@@ -1588,16 +1609,17 @@ function updateAimGuide() {
         jumpObstacleZ = obs.body.position.z;
       }
     }
-    // Position jump label at the obstacle point (3D→screen projection)
-    const jumpLabel = document.getElementById('jump-label');
+    // Position chevron + ring at the obstacle point
     if (jumpObstacleZ < LAUNCHER_Z - 0.5) {
-      const jPos = new THREE.Vector3(x, 0.2, jumpObstacleZ);
-      const jVec = jPos.clone().project(camera);
-      jumpLabel.style.left = `${(jVec.x*0.5+0.5)*window.innerWidth}px`;
-      jumpLabel.style.top = `${(-jVec.y*0.5+0.5)*window.innerHeight}px`;
-      jumpLabel.style.display = 'block';
+      jumpRamp.position.x = x;
+      jumpRamp.position.z = jumpObstacleZ;
+      jumpRamp.visible = true;
+      jumpRing.position.x = x;
+      jumpRing.position.z = jumpObstacleZ;
+      jumpRing.visible = true;
     } else {
-      jumpLabel.style.display = 'none';
+      jumpRamp.visible = false;
+      jumpRing.visible = false;
     }
 
     for (let i = 0; i < jumpArcPoints; i++) {
@@ -1629,7 +1651,8 @@ function updateAimGuide() {
     jumpLine.visible = false;
     jumpDots.visible = false;
     jumpArrows.forEach(a => { a.visible = false; a.material.opacity = 0; });
-    document.getElementById('jump-label').style.display = 'none';
+    jumpRamp.visible = false;
+    jumpRing.visible = false;
   }
 }
 
