@@ -371,6 +371,17 @@ bwBody.addShape(new CANNON.Box(new CANNON.Vec3((TABLE_WIDTH+WT*2)/2, WH/2, WT/2)
 bwBody.position.set(0, WH/2, halfL + WT/2);
 world.addBody(bwBody);
 
+// Invisible tall side walls — prevent high-level items from bouncing over the sides
+const swHeight = 4;
+const swBodyL = new CANNON.Body({ mass: 0, material: wallMaterial });
+swBodyL.addShape(new CANNON.Box(new CANNON.Vec3(WT/2, swHeight/2, TABLE_LENGTH/2)));
+swBodyL.position.set(-halfW - WT/2, swHeight/2, 0);
+world.addBody(swBodyL);
+const swBodyR = new CANNON.Body({ mass: 0, material: wallMaterial });
+swBodyR.addShape(new CANNON.Box(new CANNON.Vec3(WT/2, swHeight/2, TABLE_LENGTH/2)));
+swBodyR.position.set(halfW + WT/2, swHeight/2, 0);
+world.addBody(swBodyR);
+
 // Reinforced back wall — thick and tall to stop jump arcs from clearing it
 const rwBody = new CANNON.Body({ mass: 0, material: defaultMaterial });
 rwBody.addShape(new CANNON.Box(new CANNON.Vec3((TABLE_WIDTH+WT*2)/2, 8, WT*2)));
